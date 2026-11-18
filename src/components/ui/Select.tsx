@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { KeyboardEvent } from "react";
 
 export interface SelectOption<T extends string> {
@@ -34,6 +35,7 @@ export function Select<T extends string>({
 }: SelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const [anchor, setAnchor] = useState<{ top: number; left: number; width: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const listId = useId();
@@ -45,6 +47,39 @@ export function Select<T extends string>({
     setOpen(false);
     if (returnFocus) triggerRef.current?.focus();
   }, []);
+
+  /**
+   * The rails scroll, so a menu placed inside them would be clipped. The list
+   * is portalled to the body and positioned from the trigger instead.
+   */
+  const measure = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const menuHeight = Math.min(250, options.length * 34 + 10);
+    const openUp = rect.bottom + menuHeight + 10 > window.innerHeight && rect.top > menuHeight;
+    setAnchor({
+      top: openUp ? rect.top - menuHeight - 6 : rect.bottom + 6,
+      left: Math.min(rect.left, window.innerWidth - rect.width - 8),
+      width: rect.width,
+    });
+  }, [options.length]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    measure();
+  }, [open, measure]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onScroll = () => measure();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open, measure]);
 
   useEffect(() => {
     if (!open) return;
@@ -138,8 +173,15 @@ export function Select<T extends string>({
           <Chevron open={open} />
         </button>
 
-        {open && (
-          <div ref={listRef} id={listId} role="listbox" aria-label={label} className="menu">
+        {open && anchor && createPortal(
+          <div
+            ref={listRef}
+            id={listId}
+            role="listbox"
+            aria-label={label}
+            className="menu"
+            style={{ position: "fixed", top: anchor.top, left: anchor.left, width: anchor.width }}
+          >
             {options.map((option, index) => {
               const isSelected = option.value === value;
               return (
@@ -166,7 +208,8 @@ export function Select<T extends string>({
                 </button>
               );
             })}
-          </div>
+          </div>,
+          document.body,
         )}
       </div>
 
