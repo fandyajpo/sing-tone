@@ -7,6 +7,7 @@ import {
   SYNTH_PATCHES,
   type AnalogSynthId,
 } from "./instruments";
+import { PitchVoicePool } from "./pitch-voices";
 
 const SALAMANDER_BASE = "https://tonejs.github.io/audio/salamander/";
 const CASIO_BASE = "https://tonejs.github.io/audio/casio/";
@@ -145,6 +146,7 @@ export class AudioEngine {
   private readonly makeup: Tone.Gain;
 
   private voice: Voice | null = null;
+  private pitchPool: PitchVoicePool | null = null;
   private instrument: InstrumentId = "grand";
   private held = new Map<PianoNote, number>();
   private loadToken = 0;
@@ -203,6 +205,9 @@ export class AudioEngine {
 
   async setInstrument(instrument: InstrumentId): Promise<void> {
     this.instrument = instrument;
+    // Continuous voices are built per instrument, so they are rebuilt too.
+    this.pitchPool?.dispose();
+    this.pitchPool = null;
     const token = ++this.loadToken;
     const previous = this.voice;
     previous?.releaseAll();
@@ -262,6 +267,27 @@ export class AudioEngine {
 
   setMuted(muted: boolean): void {
     this.output.mute = muted;
+  }
+
+  /**
+   * Pitch mode: one independent voice per fingertip. `pitchTo` glides the
+   * voice's frequency signal, so a sliding finger bends instead of retriggering.
+   */
+  pitchOn(key: string, midi: number, velocity = 0.85): void {
+    if (!this.pitchPool) this.pitchPool = new PitchVoicePool(this.instrument, this.shelf);
+    this.pitchPool.noteOn(key, midi, velocity);
+  }
+
+  pitchTo(key: string, midi: number, glide = 0.045): void {
+    this.pitchPool?.setMidi(key, midi, glide);
+  }
+
+  pitchOff(key: string): void {
+    this.pitchPool?.noteOff(key);
+  }
+
+  pitchReleaseAll(): void {
+    this.pitchPool?.releaseAll();
   }
 
   /**
@@ -427,6 +453,8 @@ export class AudioEngine {
     this.held.clear();
     this.voice?.dispose();
     this.voice = null;
+    this.pitchPool?.dispose();
+    this.pitchPool = null;
     this.meter.dispose();
     this.analyser.dispose();
     this.limiter.dispose();

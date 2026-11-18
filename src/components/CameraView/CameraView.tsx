@@ -8,6 +8,7 @@ interface CameraViewProps {
   trackingReady: boolean;
   handsVisible: number;
   chordActive: boolean;
+  mode?: "chords" | "pitch";
 }
 
 export function CameraView({
@@ -16,6 +17,7 @@ export function CameraView({
   trackingReady,
   handsVisible,
   chordActive,
+  mode = "chords",
 }: CameraViewProps) {
   const [showHint, setShowHint] = useState(false);
 
@@ -27,6 +29,8 @@ export function CameraView({
     const timer = window.setTimeout(() => setShowHint(true), 2200);
     return () => window.clearTimeout(timer);
   }, [status, trackingReady, chordActive]);
+
+  const pitchMode = mode === "pitch";
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-paper">
@@ -48,12 +52,16 @@ export function CameraView({
         <div className="absolute inset-x-0 top-[42%] flex -translate-y-1/2 justify-center px-6">
           <div className="animate-fade-up max-w-xs rounded-2xl border border-white/10 bg-[#0d0a11]/64 px-4 py-3 text-center backdrop-blur">
             <span className="text-[9px] uppercase tracking-[0.3em] text-white/45">
-              {handsVisible === 0 ? "no hands detected" : "no chord sign"}
+              {handsVisible === 0 ? "no hands detected" : pitchMode ? "no fingers held" : "no chord sign"}
             </span>
             <p className="mt-1.5 text-[11px] leading-relaxed text-white/55">
               {handsVisible === 0
-                ? "Raise both hands into the frame, palms toward the camera, then hold up one to five fingers on your left hand."
-                : "Hold up 1–5 fingers on your left hand to pick the chord degree, then show your right hand to set the voicing."}
+                ? pitchMode
+                  ? "Raise a hand into the frame and extend a finger. Lift it to raise the pitch, lower it to bend down."
+                  : "Raise both hands into the frame, palms toward the camera, then hold up one to five fingers on your left hand."
+                : pitchMode
+                  ? "Extend any fingertip and slide it up or down. Each held finger sounds its own continuous pitch."
+                  : "Hold up 1–5 fingers on your left hand to pick the chord degree, then show your right hand to set the voicing."}
             </p>
           </div>
         </div>

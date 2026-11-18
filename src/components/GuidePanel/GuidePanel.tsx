@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { INSTRUMENTS } from "../../lib/instruments";
 import { PIANO_RANGES } from "../../lib/piano-ranges";
+import { midiToNote } from "../../types/piano";
 import { Button } from "../ui/Button";
 import { Slider } from "../ui/Slider";
 
@@ -8,6 +9,11 @@ export interface PerformanceSettings {
   sensitivity: number;
   smoothing: number;
   detectionConfidence: number;
+  pitchBendRange: number;
+  pitchLowMidi: number;
+  pitchHighMidi: number;
+  pitchResponseMs: number;
+  pitchDeadZone: number;
 }
 
 interface GuidePanelProps {
@@ -15,6 +21,8 @@ interface GuidePanelProps {
   onClose: () => void;
   settings: PerformanceSettings;
   onChange: (patch: Partial<PerformanceSettings>) => void;
+  rangeLowMidi: number;
+  rangeHighMidi: number;
   audioReady: boolean;
   audioError: string | null;
   onEnableAudio: () => void;
@@ -75,6 +83,8 @@ export function GuidePanel({
   onClose,
   settings,
   onChange,
+  rangeLowMidi,
+  rangeHighMidi,
   audioReady,
   audioError,
   onEnableAudio,
@@ -175,6 +185,65 @@ export function GuidePanel({
                   max={0.85}
                   display={`${Math.round(settings.detectionConfidence * 100)}`}
                   onChange={(value) => onChange({ detectionConfidence: value })}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-ink/10 bg-white/75 p-4">
+              <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Pitch glide</h3>
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
+                In pitch mode each extended fingertip holds its own continuous voice. Its height in
+                the frame sets the pitch, inside the window below.
+              </p>
+
+              <div className="mt-4 flex flex-col gap-4">
+                <Slider
+                  label="Bend range"
+                  min={12}
+                  max={Math.max(12, rangeHighMidi - rangeLowMidi)}
+                  step={1}
+                  value={settings.pitchBendRange}
+                  display={`${settings.pitchBendRange} st`}
+                  hint="Semitones covered by the full vertical travel"
+                  onChange={(value) => onChange({ pitchBendRange: value })}
+                />
+                <Slider
+                  label="Lowest pitch"
+                  min={rangeLowMidi}
+                  max={settings.pitchHighMidi - 12}
+                  step={1}
+                  value={settings.pitchLowMidi}
+                  display={midiToNote(settings.pitchLowMidi)}
+                  onChange={(value) => onChange({ pitchLowMidi: value })}
+                />
+                <Slider
+                  label="Highest pitch"
+                  min={settings.pitchLowMidi + 12}
+                  max={rangeHighMidi}
+                  step={1}
+                  value={settings.pitchHighMidi}
+                  display={midiToNote(settings.pitchHighMidi)}
+                  onChange={(value) => onChange({ pitchHighMidi: value })}
+                />
+                <Slider
+                  label="Response"
+                  min={30}
+                  max={240}
+                  step={5}
+                  value={settings.pitchResponseMs}
+                  display={`${settings.pitchResponseMs} ms`}
+                  hint="How quickly the pitch follows the finger"
+                  onChange={(value) => onChange({ pitchResponseMs: value })}
+                />
+                <Slider
+                  label="Dead zone"
+                  min={0}
+                  max={0.02}
+                  step={0.0005}
+                  value={settings.pitchDeadZone}
+                  display={`${(settings.pitchDeadZone * 100).toFixed(1)}%`}
+                  hint="Ignores tiny jitter while a finger is held"
+                  onChange={(value) => onChange({ pitchDeadZone: value })}
                 />
               </div>
             </section>

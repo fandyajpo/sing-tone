@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AudioControls } from "./components/AudioControls/AudioControls";
 import { CameraSelector } from "./components/CameraSelector/CameraSelector";
 import { CameraView } from "./components/CameraView/CameraView";
@@ -9,6 +9,7 @@ import { HandOverlay } from "./components/HandOverlay/HandOverlay";
 import { InstrumentSelector } from "./components/InstrumentSelector/InstrumentSelector";
 import { KeySelector } from "./components/KeySelector/KeySelector";
 import { PianoRangeSelector } from "./components/PianoRangeSelector/PianoRangeSelector";
+import { PitchMeter } from "./components/PitchMeter/PitchMeter";
 import { StartGate } from "./components/StartGate/StartGate";
 import { TipsPanel } from "./components/TipsPanel/TipsPanel";
 import { Button } from "./components/ui/Button";
@@ -17,16 +18,26 @@ import { useAudioEngine } from "./hooks/useAudioEngine";
 import { useCamera } from "./hooks/useCamera";
 import { useGestureSynth } from "./hooks/useGestureSynth";
 import { useHandTracking } from "./hooks/useHandTracking";
+import { usePitchSynth } from "./hooks/usePitchSynth";
 import { readStoredKey, storeKey } from "./lib/gesture-chords";
 import type { KeyId } from "./lib/gesture-chords";
 import type { LandmarkerOptions } from "./lib/mediapipe";
 import { getPianoRange, readStoredPianoRange, storePianoRange } from "./lib/piano-ranges";
 import type { PianoRangeId } from "./lib/piano-ranges";
+import { clampWindow, windowForBendRange } from "./lib/pitch-mapping";
+import { readStoredMode, storeMode } from "./lib/play-mode";
+import type { PlayMode } from "./lib/play-mode";
+import { noteToMidi } from "./types/piano";
 
 const INITIAL_SETTINGS: PerformanceSettings = {
   sensitivity: 0.62,
   smoothing: 0.42,
   detectionConfidence: 0.5,
+  pitchBendRange: 24,
+  pitchLowMidi: 48,
+  pitchHighMidi: 71,
+  pitchResponseMs: 110,
+  pitchDeadZone: 0.0035,
 };
 
 export default function App() {
@@ -42,8 +53,33 @@ export default function App() {
   const [settings, setSettings] = useState<PerformanceSettings>(INITIAL_SETTINGS);
   const [rangeId, setRangeId] = useState<PianoRangeId>(readStoredPianoRange);
   const [keyId, setKeyId] = useState<KeyId>(readStoredKey);
+  const [mode, setMode] = useState<PlayMode>(readStoredMode);
 
   const pianoRange = useMemo(() => getPianoRange(rangeId), [rangeId]);
+  const rangeLowMidi = useMemo(() => noteToMidi(pianoRange.lowest), [pianoRange]);
+  const rangeHighMidi = useMemo(() => noteToMidi(pianoRange.highest), [pianoRange]);
+
+  const pitchWindow = useMemo(
+    () =>
+      clampWindow(
+        settings.pitchLowMidi,
+        settings.pitchHighMidi,
+        rangeLowMidi,
+        rangeHighMidi,
+      ),
+    [settings.pitchLowMidi, settings.pitchHighMidi, rangeLowMidi, rangeHighMidi],
+  );
+
+  // The selected note range owns the pitch boundaries.
+  useEffect(() => {
+    setSettings((previous) => {
+      const next = windowForBendRange(rangeLowMidi, rangeHighMidi, previous.pitchBendRange);
+      if (previous.pitchLowMidi === next.low && previous.pitchHighMidi === next.high) {
+        return previous;
+      }
+      return { ...previous, pitchLowMidi: next.low, pitchHighMidi: next.high };
+    });
+  }, [rangeLowMidi, rangeHighMidi]);
 
   const changeRange = useCallback((next: PianoRangeId) => {
     setRangeId(next);
@@ -53,6 +89,11 @@ export default function App() {
   const changeKey = useCallback((next: KeyId) => {
     setKeyId(next);
     storeKey(next);
+  }, []);
+
+  const changeMode = useCallback((next: PlayMode) => {
+    setMode(next);
+    storeMode(next);
   }, []);
 
   const cameraReady = camera.status === "ready";
@@ -69,6 +110,8 @@ export default function App() {
   );
 
   const tracking = useHandTracking(videoRef, trackingEnabled, landmarkerOptions);
+  const trackingLive = trackingEnabled && tracking.status === "ready";
+  const chordMode = mode === "chords";
 
   const gesture = useGestureSynth({
     canvasRef,
@@ -78,7 +121,20 @@ export default function App() {
     baseOctave: pianoRange.baseOctave,
     sensitivity: settings.sensitivity,
     smoothing: settings.smoothing,
-    enabled: trackingEnabled && tracking.status === "ready",
+    enabled: chordMode && trackingLive,
+  });
+
+  const pitch = usePitchSynth({
+    canvasRef,
+    frameRef: tracking.frameRef,
+    audioRef: audio.engineRef,
+    window: pitchWindow,
+    sensitivity: settings.sensitivity,
+    smoothing: settings.smoothing,
+    responseMs: settings.pitchResponseMs,
+    deadZone: settings.pitchDeadZone,
+    instrument: audio.instrument,
+    enabled: mode === "pitch" && trackingLive,
   });
 
   const handleStart = useCallback(async () => {
@@ -93,16 +149,32 @@ export default function App() {
     setStarting(false);
   }, [audio, camera, starting]);
 
-  const updateSettings = useCallback((patch: Partial<PerformanceSettings>) => {
-    setSettings((previous) => ({ ...previous, ...patch }));
-  }, []);
+  const updateSettings = useCallback(
+    (patch: Partial<PerformanceSettings>) => {
+      setSettings((previous) => {
+        const merged = { ...previous, ...patch };
+        if (patch.pitchBendRange !== undefined) {
+          const next = windowForBendRange(rangeLowMidi, rangeHighMidi, merged.pitchBendRange);
+          merged.pitchLowMidi = next.low;
+          merged.pitchHighMidi = next.high;
+        }
+        if (merged.pitchLowMidi > merged.pitchHighMidi - 12) {
+          merged.pitchLowMidi = merged.pitchHighMidi - 12;
+        }
+        return merged;
+      });
+    },
+    [rangeLowMidi, rangeHighMidi],
+  );
 
   const openGuide = useCallback(() => setGuideOpen(true), []);
   const closeGuide = useCallback(() => setGuideOpen(false), []);
 
   const cameraFaulted =
     started && camera.status !== "ready" && camera.status !== "requesting";
-  const chordActive = gesture.snapshot.chordName !== null;
+  const chordActive = chordMode && gesture.snapshot.chordName !== null;
+  const handsVisible = Math.max(gesture.handsVisible, pitch.snapshot.handsVisible);
+  const voiceCount = pitch.snapshot.voices.length;
 
   return (
     <main className="relative flex h-dvh w-full flex-col gap-2.5 overflow-y-auto bg-[#0a080c] p-2.5 text-ink select-none lg:flex-row lg:gap-3 lg:overflow-hidden lg:p-3">
@@ -127,9 +199,57 @@ export default function App() {
           </Button>
         </div>
 
+        <div className="panel flex flex-col gap-2 px-3 py-2.5">
+          <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Mode</span>
+          <div className="flex gap-1.5">
+            <Button
+              size="sm"
+              block
+              variant={chordMode ? "solid" : "outline"}
+              aria-pressed={chordMode}
+              onClick={() => changeMode("chords")}
+            >
+              Chords
+            </Button>
+            <Button
+              size="sm"
+              block
+              variant={chordMode ? "outline" : "solid"}
+              aria-pressed={!chordMode}
+              onClick={() => changeMode("pitch")}
+            >
+              Pitch
+            </Button>
+          </div>
+          <span className="text-[10px] leading-snug text-ink-faint">
+            {chordMode
+              ? "Left hand picks the degree, right hand the voicing."
+              : "Each fingertip bends its own continuous pitch."}
+          </span>
+        </div>
+
         <InstrumentSelector instrument={audio.instrument} onSelect={audio.selectInstrument} />
-        <KeySelector keyId={keyId} onChange={changeKey} />
-        <PianoRangeSelector range={pianoRange} onChange={changeRange} />
+        {chordMode ? (
+          <>
+            <KeySelector keyId={keyId} onChange={changeKey} />
+            <PianoRangeSelector range={pianoRange} onChange={changeRange} />
+          </>
+        ) : (
+          <>
+            <PianoRangeSelector range={pianoRange} onChange={changeRange} />
+            <div className="panel flex flex-col gap-1 px-3.5 py-2.5">
+              <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">
+                Pitch window
+              </span>
+              <span className="font-mono text-[11px] text-ink">
+                {pitchWindow.low} → {pitchWindow.high} midi
+              </span>
+              <span className="text-[10px] leading-snug text-ink-faint">
+                {rangeHighMidi - rangeLowMidi} semitones available in {pianoRange.label}
+              </span>
+            </div>
+          </>
+        )}
         <CameraSelector
           devices={camera.devices}
           deviceId={camera.deviceId}
@@ -142,12 +262,18 @@ export default function App() {
           <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Session</span>
           <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
             <span>hands</span>
-            <span className="text-ink">{gesture.handsVisible}</span>
+            <span className="text-ink">{handsVisible}</span>
           </div>
           <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
             <span>tracking</span>
             <span className="text-ink">{tracking.stats.fps} fps</span>
           </div>
+          {!chordMode && (
+            <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
+              <span>voices</span>
+              <span className="text-ink">{voiceCount}</span>
+            </div>
+          )}
           <p className="mt-1 text-[9px] leading-snug text-ink-faint">
             Camera frames stay inside this tab.
           </p>
@@ -161,8 +287,9 @@ export default function App() {
             videoRef={videoRef}
             status={camera.status}
             trackingReady={tracking.status === "ready"}
-            handsVisible={gesture.handsVisible}
+            handsVisible={handsVisible}
             chordActive={chordActive}
+            mode={mode}
           />
 
           <HandOverlay canvasRef={canvasRef} />
@@ -171,7 +298,7 @@ export default function App() {
           <div className="pointer-events-none absolute left-3 top-3 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.24em] text-white/50 backdrop-blur">
             <span className="h-1 w-1 rounded-full bg-gold-soft/80" />
             <span>
-              {gesture.handsVisible} {gesture.handsVisible === 1 ? "hand" : "hands"}
+              {handsVisible} {handsVisible === 1 ? "hand" : "hands"}
             </span>
             <span className="text-white/20">·</span>
             <span>{tracking.stats.fps} fps</span>
@@ -207,7 +334,11 @@ export default function App() {
           )}
         </div>
 
-        <GestureHud keyId={keyId} snapshot={gesture.snapshot} />
+        {chordMode ? (
+          <GestureHud keyId={keyId} snapshot={gesture.snapshot} />
+        ) : (
+          <PitchMeter window={pitchWindow} snapshot={pitch.snapshot} />
+        )}
       </section>
 
       {/* Right rail — sound and coaching */}
@@ -226,16 +357,19 @@ export default function App() {
         />
 
         <TipsPanel
-          handsVisible={gesture.handsVisible}
+          handsVisible={handsVisible}
           chordActive={chordActive}
           audioReady={audio.status === "ready"}
         />
 
         <div className="panel flex flex-col gap-1.5 px-3.5 py-3">
-          <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Right hand</span>
+          <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">
+            {chordMode ? "Right hand" : "Pitch"}
+          </span>
           <p className="text-[11px] leading-relaxed text-ink-soft">
-            Raise it to open the tone and add volume. One to four fingers choose root, 1st
-            inversion, 7th or dominant 7th; the thumb shifts an octave.
+            {chordMode
+              ? "Raise it to open the tone and add volume. One to four fingers choose root, 1st inversion, 7th or dominant 7th; the thumb shifts an octave."
+              : "Hold an extended fingertip and slide it: up bends the pitch higher, down bends it lower, and holding still keeps it steady. Every finger keeps its own voice."}
           </p>
         </div>
       </aside>
@@ -245,6 +379,8 @@ export default function App() {
         onClose={closeGuide}
         settings={settings}
         onChange={updateSettings}
+        rangeLowMidi={rangeLowMidi}
+        rangeHighMidi={rangeHighMidi}
         audioReady={audio.status === "ready"}
         audioError={audio.error}
         onEnableAudio={() => {
