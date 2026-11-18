@@ -208,7 +208,7 @@ export default function App() {
       />
 
       {cameraFaulted && (
-        <div className="absolute inset-0 z-40 grid place-items-center bg-paper/70 p-6 backdrop-blur-sm">
+        <div className="absolute inset-0 z-40 grid place-items-center bg-[#060508]/70 p-6 backdrop-blur-sm">
           <div className="panel max-w-sm px-5 py-5 text-center">
             <p className="text-[9px] uppercase tracking-[0.3em] text-magenta">
               camera disconnected

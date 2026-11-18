@@ -112,11 +112,11 @@ export function WaveformVisualizer({ audioRef }: WaveformVisualizerProps) {
       className="pointer-events-none absolute inset-x-0 bottom-0 z-20 overflow-hidden"
       style={{ height: WAVE_STRIP_HEIGHT }}
     >
-      <div className="absolute inset-0 bg-gradient-to-t from-paper via-paper/60 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#060508]/90 via-[#07050a]/50 to-transparent" />
       <canvas ref={canvasRef} className="relative h-full w-full" aria-hidden="true" />
       <div className="absolute bottom-1.5 left-3 flex items-center gap-1.5 sm:left-5">
-        <span className="h-1 w-1 rounded-full bg-gold/70" />
-        <span className="font-mono text-[9px] uppercase tracking-[0.26em] text-ink-faint">
+        <span className="h-1 w-1 rounded-full bg-gold-soft/70" />
+        <span className="font-mono text-[9px] uppercase tracking-[0.26em] text-white/30">
           master out
         </span>
       </div>
