@@ -1,0 +1,256 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f5f0e7;
+  --color-paper-soft: #fbf8f2;
+  --color-ink: #2a241c;
+  --color-ink-soft: #6f6558;
+  --color-ink-faint: #7d7265;
+  --color-gold: #b0602a;
+  --color-gold-soft: #e8a565;
+  --color-ember: #c4553a;
+  --color-magenta: #b83c5f;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
+  }
+
+  ::selection {
+    background: rgba(232, 165, 101, 0.4);
+    color: #2a241c;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+/* ---------- surfaces ---------- */
+
+.panel {
+  background: rgba(255, 253, 248, 0.93);
+  border: 1px solid rgba(58, 46, 30, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  box-shadow:
+    0 20px 44px -30px rgba(70, 52, 28, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.panel-quiet {
+  background: rgba(255, 253, 248, 0.82);
+  border: 1px solid rgba(58, 46, 30, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.hairline {
+  background: linear-gradient(90deg, transparent, rgba(176, 96, 42, 0.45), transparent);
+  height: 1px;
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+
+/* A paper-white frame so the light chrome sits naturally over the video. */
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      118% 88% at 50% 42%,
+      transparent 36%,
+      rgba(245, 240, 231, 0.45) 80%,
+      rgba(245, 240, 231, 0.88) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(245, 240, 231, 0.9) 0%,
+      rgba(245, 240, 231, 0.22) 16%,
+      transparent 38%,
+      rgba(245, 240, 231, 0.3) 70%,
+      rgba(245, 240, 231, 0.95) 100%
+    );
+}
+
+/* ---------- controls ---------- */
+
+.select-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.select-shell select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  padding: 0 20px 0 0;
+  color: var(--color-ink);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.select-shell select option {
+  background: #fdfaf5;
+  color: var(--color-ink);
+}
+
+.select-shell::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid rgba(176, 96, 42, 0.8);
+  border-bottom: 1.5px solid rgba(176, 96, 42, 0.8);
+  transform: rotate(45deg) translateY(-2px);
+  pointer-events: none;
+}
+
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 14px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"].slider::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(176, 96, 42, 0.65), rgba(176, 96, 42, 0.18));
+}
+
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #fffdf9;
+  border: 1.5px solid rgba(176, 96, 42, 0.85);
+  box-shadow: 0 1px 4px rgba(70, 52, 28, 0.25);
+  transition: transform 120ms ease;
+}
+
+input[type="range"].slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+input[type="range"].slider::-moz-range-track {
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(176, 96, 42, 0.65), rgba(176, 96, 42, 0.18));
+}
+
+input[type="range"].slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid rgba(176, 96, 42, 0.85);
+  border-radius: 50%;
+  background: #fffdf9;
+  box-shadow: 0 1px 4px rgba(70, 52, 28, 0.25);
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(176, 96, 42, 0.35) transparent;
+}
+
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(176, 96, 42, 0.3);
+  border-radius: 999px;
+}
+
+/* ---------- motion ---------- */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 420ms cubic-bezier(0.22, 0.85, 0.24, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 320ms ease-out both;
+}
+
+.breathe {
+  animation: breathe 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in,
+  .breathe {
+    animation: none;
+  }
+}
