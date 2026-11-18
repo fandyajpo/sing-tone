@@ -2,8 +2,20 @@ import { FilesetResolver, HandLandmarker, type HandLandmarkerResult } from "@med
 import type { HandFrame, HandSample, Handedness } from "../types/hand";
 
 const base = import.meta.env.BASE_URL;
-export const MODEL_URL = `${base}models/hand_landmarker.task`;
-export const WASM_URL = `${base}mediapipe/wasm`;
+
+/**
+ * Hosted builds keep the 40 MB tracking runtime off the deploy origin, so the
+ * upload stays inside the host's asset budget. Development and offline builds
+ * serve the copies in public/ that `npm run setup:assets` puts there.
+ */
+const CDN_WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm";
+const CDN_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+
+const useCdnForAssets = import.meta.env.VITE_MEDIAPIPE_CDN === "1";
+
+export const MODEL_URL = useCdnForAssets ? CDN_MODEL_URL : `${base}models/hand_landmarker.task`;
+export const WASM_URL = useCdnForAssets ? CDN_WASM_URL : `${base}mediapipe/wasm`;
 
 export interface LandmarkerOptions {
   numHands: number;
