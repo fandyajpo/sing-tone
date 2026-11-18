@@ -39,12 +39,12 @@ export function LevelMeter({ engineRef, muted }: LevelMeterProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[9px] uppercase tracking-[0.22em] text-ink-faint">Level</span>
+        <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Level</span>
         <span className="font-mono text-[9px] text-ink-faint">
           <span ref={readoutRef}>−∞</span> dB
         </span>
       </div>
-      <div className="relative h-[3px] w-16 overflow-hidden rounded-full bg-ink/10 sm:w-24">
+      <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-ink/10">
         <div
           ref={barRef}
           className="absolute inset-0 origin-left rounded-full bg-gradient-to-r from-[#e8a565] via-[#c4553a] to-[#b83c5f]"

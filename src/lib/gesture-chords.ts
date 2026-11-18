@@ -158,9 +158,15 @@ export function chordFor(spec: ChordSpec): Chord {
       break;
   }
 
+  const bassLabel = spec.voicing === "first" ? pitchLabel(midis[0] ?? rootMidi) : null;
+
+  // Double the root an octave below for weight, except when that would fall
+  // below a piano's lowest octave.
+  const subRoot = rootMidi - 12;
+  if (subRoot >= 24) midis.unshift(subRoot);
+
   const rootLabel = pitchLabel(rootMidi);
   const suffix = suffixFor(quality, spec.voicing);
-  const bassLabel = spec.voicing === "first" ? pitchLabel(midis[0] ?? rootMidi) : null;
 
   return {
     id: `${spec.keyId}:${degree}:${spec.mode}:${spec.voicing}:${octave}`,

@@ -140,6 +140,9 @@ export class AudioEngine {
   private readonly output: Tone.Volume;
   private readonly meter: Tone.Meter;
   private readonly analyser: Tone.Waveform;
+  private readonly shelf: Tone.Filter;
+  private readonly compressor: Tone.Compressor;
+  private readonly makeup: Tone.Gain;
 
   private voice: Voice | null = null;
   private instrument: InstrumentId = "grand";
@@ -157,6 +160,21 @@ export class AudioEngine {
     this.meter = new Tone.Meter({ smoothing: 0.72, normalRange: true });
     this.analyser = new Tone.Waveform();
 
+    // Voices run through a tone shelf and a gentle bus compressor before the
+    // limiter, so chords keep their body instead of only bouncing off the ceiling.
+    this.shelf = new Tone.Filter({ type: "highshelf", frequency: 2600, gain: 0 });
+    this.compressor = new Tone.Compressor({
+      threshold: -20,
+      ratio: 3,
+      attack: 0.004,
+      release: 0.15,
+      knee: 18,
+    });
+    this.makeup = new Tone.Gain(1.35);
+
+    this.shelf.connect(this.compressor);
+    this.compressor.connect(this.makeup);
+    this.makeup.connect(this.limiter);
     this.limiter.connect(this.output);
     this.output.connect(this.meter);
     this.output.connect(this.analyser);
@@ -246,6 +264,17 @@ export class AudioEngine {
     this.output.mute = muted;
   }
 
+  /**
+   * Tilts the top end with the right hand: raise it and the sound opens up,
+   * lower it and the chords round off. One shelf on the master bus keeps the
+   * gesture feeling the same on every instrument.
+   */
+  setBrightness(value: number): void {
+    const clamped = Math.min(1, Math.max(0, value));
+    const db = -3.5 + clamped * 7.5;
+    this.shelf.gain.rampTo(db, 0.08);
+  }
+
   /** Smoothed 0..1 output level for the meters. */
   getLevel(): number {
     const raw = this.meter.getValue();
@@ -276,7 +305,7 @@ export class AudioEngine {
       attack: 0.001,
       release: instrument === "grand" ? 1.4 : 0.9,
       volume: INSTRUMENT_VOLUME_DB[instrument],
-    }).connect(this.limiter);
+    }).connect(this.shelf);
 
     if (this.disposed || token !== this.loadToken) {
       sampler.dispose();
@@ -343,7 +372,7 @@ export class AudioEngine {
         break;
     }
 
-    synth.connect(this.limiter);
+    synth.connect(this.shelf);
     // Ten fingers plus release tails can exceed a small voice pool quickly.
     synth.maxPolyphony = 48;
     return new SynthVoice(synth);
@@ -386,7 +415,7 @@ export class AudioEngine {
     });
 
     synth.connect(filter);
-    filter.connect(this.limiter);
+    filter.connect(this.shelf);
     synth.maxPolyphony = 48;
 
     return new SynthVoice(synth, [filter]);
@@ -401,6 +430,9 @@ export class AudioEngine {
     this.meter.dispose();
     this.analyser.dispose();
     this.limiter.dispose();
+    this.makeup.dispose();
+    this.compressor.dispose();
+    this.shelf.dispose();
     this.output.dispose();
   }
 }

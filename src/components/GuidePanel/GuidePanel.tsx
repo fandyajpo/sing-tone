@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { INSTRUMENTS } from "../../lib/instruments";
 import { PIANO_RANGES } from "../../lib/piano-ranges";
+import { Button } from "../ui/Button";
+import { Slider } from "../ui/Slider";
 
 export interface PerformanceSettings {
   sensitivity: number;
@@ -111,16 +113,15 @@ export function GuidePanel({
               GUIDE
             </h2>
           </div>
-          <button
-            type="button"
+          <Button
             onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-full border border-ink/15 text-ink-soft transition hover:border-ink/35 hover:text-ink"
             aria-label="Close guide"
+            className="!h-8 !w-8 !rounded-full !p-0"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
               <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
-          </button>
+          </Button>
         </header>
 
         <div className="grid gap-7 p-5 sm:grid-cols-[1.15fr_1fr] sm:p-7">
@@ -152,24 +153,27 @@ export function GuidePanel({
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Calibration</h3>
 
               <div className="mt-4 flex flex-col gap-4">
-                <SliderRow
+                <Slider
                   label="Sensitivity"
                   hint="How easily a finger counts as extended"
                   value={settings.sensitivity}
+                  display={`${Math.round(settings.sensitivity * 100)}`}
                   onChange={(value) => onChange({ sensitivity: value })}
                 />
-                <SliderRow
+                <Slider
                   label="Smoothing"
                   hint="Calms jittery landmarks"
                   value={settings.smoothing}
+                  display={`${Math.round(settings.smoothing * 100)}`}
                   onChange={(value) => onChange({ smoothing: value })}
                 />
-                <SliderRow
+                <Slider
                   label="Detection"
                   hint="Hand detection confidence"
                   value={settings.detectionConfidence}
                   min={0.3}
                   max={0.85}
+                  display={`${Math.round(settings.detectionConfidence * 100)}`}
                   onChange={(value) => onChange({ detectionConfidence: value })}
                 />
               </div>
@@ -194,13 +198,9 @@ export function GuidePanel({
               </div>
 
               {!audioReady && (
-                <button
-                  type="button"
-                  onClick={onEnableAudio}
-                  className="mt-4 w-full rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-[9px] uppercase tracking-[0.28em] text-gold transition hover:bg-gold/15"
-                >
+                <Button variant="gold" size="sm" block className="mt-4" onClick={onEnableAudio}>
                   Enable audio
-                </button>
+                </Button>
               )}
               {audioError && <p className="mt-2 text-[10px] text-magenta">{audioError}</p>}
             </section>
@@ -277,33 +277,4 @@ function GestureTable({
   );
 }
 
-interface SliderRowProps {
-  label: string;
-  hint: string;
-  value: number;
-  min?: number;
-  max?: number;
-  onChange: (value: number) => void;
-}
 
-function SliderRow({ label, hint, value, min = 0, max = 1, onChange }: SliderRowProps) {
-  return (
-    <label className="block">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[11px] text-ink">{label}</span>
-        <span className="font-mono text-[9px] text-ink-faint">{Math.round(value * 100)}</span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={0.01}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="slider mt-2"
-        aria-label={label}
-      />
-      <span className="text-[10px] text-ink-faint">{hint}</span>
-    </label>
-  );
-}

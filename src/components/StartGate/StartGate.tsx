@@ -1,3 +1,5 @@
+import { Button } from "../ui/Button";
+
 interface StartGateProps {
   starting: boolean;
   error: string | null;
@@ -61,16 +63,16 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
           ))}
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="solid"
+          size="lg"
+          block
           onClick={onStart}
           disabled={starting}
-          className="group relative mt-8 w-full overflow-hidden rounded-full bg-ink px-8 py-3.5 text-[10px] uppercase tracking-[0.32em] text-[#fdf9f2] transition-colors duration-200 hover:bg-[#3a3126] disabled:cursor-wait disabled:opacity-60"
+          className="mt-8"
         >
-          <span className="relative z-10">
-            {starting ? "starting camera…" : "enter the instrument"}
-          </span>
-        </button>
+          {starting ? "starting camera…" : "enter the instrument"}
+        </Button>
 
         <p className="mt-4 text-[10.5px] leading-relaxed text-ink-faint">
           Your browser will ask for camera access. Sound starts with the same tap.

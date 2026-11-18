@@ -123,6 +123,7 @@ export function useGestureSynth({
     let lastVoicing: ChordVoicing = "root";
     let lastShift = 0;
     let lastChordAt = 0;
+    let lastBrightness = -1;
     let pulseAt = -PULSE_MS;
     let signature = "";
     let knownHands = -1;
@@ -201,7 +202,14 @@ export function useGestureSynth({
         });
       }
 
-      const velocity = 0.5 + (rightPose.present ? rightPose.height : 0.55) * 0.45;
+      const handHeight = rightPose.present ? rightPose.height : 0.55;
+      // A higher floor keeps the chords full instead of whisper-quiet.
+      const velocity = 0.65 + handHeight * 0.35;
+
+      if (Math.abs(handHeight - lastBrightness) > 0.02) {
+        lastBrightness = handHeight;
+        audioRef.current?.setBrightness(handHeight);
+      }
 
       if (!target) {
         pending = null;

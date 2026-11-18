@@ -11,6 +11,7 @@ import { KeySelector } from "./components/KeySelector/KeySelector";
 import { PianoRangeSelector } from "./components/PianoRangeSelector/PianoRangeSelector";
 import { StartGate } from "./components/StartGate/StartGate";
 import { TipsPanel } from "./components/TipsPanel/TipsPanel";
+import { Button } from "./components/ui/Button";
 import { WaveformVisualizer } from "./components/WaveformVisualizer/WaveformVisualizer";
 import { useAudioEngine } from "./hooks/useAudioEngine";
 import { useCamera } from "./hooks/useCamera";
@@ -104,95 +105,140 @@ export default function App() {
   const chordActive = gesture.snapshot.chordName !== null;
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-paper text-ink select-none">
-      <CameraView
-        videoRef={videoRef}
-        status={camera.status}
-        trackingReady={tracking.status === "ready"}
-        handsVisible={gesture.handsVisible}
-        chordActive={chordActive}
-      />
-
-      <HandOverlay canvasRef={canvasRef} />
-      <WaveformVisualizer audioRef={audio.engineRef} />
-
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-40 flex flex-col gap-2 p-2.5 sm:flex-row sm:items-start sm:justify-between sm:p-4">
-        <div className="pointer-events-auto flex flex-wrap items-start gap-2">
-          <CameraSelector
-            devices={camera.devices}
-            deviceId={camera.deviceId}
-            onSelect={(deviceId) => {
-              if (deviceId) void camera.selectDevice(deviceId);
-            }}
-          />
-          <InstrumentSelector instrument={audio.instrument} onSelect={audio.selectInstrument} />
-          <KeySelector keyId={keyId} onChange={changeKey} />
-          <PianoRangeSelector range={pianoRange} onChange={changeRange} />
-          <button
-            type="button"
-            onClick={openGuide}
-            className="panel flex items-center gap-2 px-3 py-3 text-[9px] uppercase tracking-[0.24em] text-ink-soft transition-colors duration-200 hover:text-ink"
-          >
-            <span className="grid h-4 w-4 place-items-center rounded-full border border-ink/20 text-[9px] leading-none">
-              ?
-            </span>
-            Guide
-          </button>
-        </div>
-
-        <div className="pointer-events-auto self-end sm:self-auto">
-          <AudioControls
-            status={audio.status}
-            volume={audio.volume}
-            muted={audio.muted}
-            usingFallback={audio.usingFallback}
-            engineRef={audio.engineRef}
-            onVolumeChange={audio.changeVolume}
-            onToggleMute={audio.toggleMute}
-            onEnableAudio={() => {
-              void audio.start();
-            }}
-          />
-        </div>
-      </header>
-
-      <div className="pointer-events-none absolute left-1/2 top-3 z-30 hidden -translate-x-1/2 items-center gap-2.5 font-mono text-[8px] uppercase tracking-[0.28em] text-ink-faint lg:flex">
-        <span>
-          {gesture.handsVisible} {gesture.handsVisible === 1 ? "hand" : "hands"}
-        </span>
-        <span className="h-[3px] w-[3px] rounded-full bg-ink/20" />
-        <span>{tracking.stats.fps} fps</span>
-        <span className="h-[3px] w-[3px] rounded-full bg-ink/20" />
-        <span>{audio.instrument}</span>
-      </div>
-
-      {started && tracking.status === "loading" && (
-        <div className="panel-quiet absolute left-1/2 top-16 z-40 -translate-x-1/2 px-3 py-1.5 text-[9px] uppercase tracking-[0.26em] text-ink-soft">
-          initialising hand tracking…
-        </div>
-      )}
-
-      {tracking.status === "error" && (
-        <div className="panel absolute left-1/2 top-16 z-40 w-[min(92vw,22rem)] -translate-x-1/2 px-4 py-3 text-center">
-          <p className="text-[9px] uppercase tracking-[0.26em] text-magenta">tracking stopped</p>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">{tracking.error}</p>
-        </div>
-      )}
-
-      <div className="pointer-events-none absolute inset-x-0 z-30" style={{ bottom: 74 }}>
-        <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-2 px-2.5 sm:px-4">
-          <div className="hidden justify-end lg:flex">
-            <div className="pointer-events-auto">
-              <TipsPanel
-                handsVisible={gesture.handsVisible}
-                chordActive={chordActive}
-                audioReady={audio.status === "ready"}
-              />
-            </div>
+    <main className="relative flex h-dvh w-full flex-col gap-2.5 overflow-y-auto bg-[#0a080c] p-2.5 text-ink select-none lg:flex-row lg:gap-3 lg:overflow-hidden lg:p-3">
+      {/* Left rail — setup */}
+      <aside className="scroll-thin order-3 flex w-full shrink-0 flex-col gap-2.5 lg:order-1 lg:w-[254px] lg:overflow-y-auto">
+        <div className="flex items-start justify-between gap-2 px-1 pb-0.5">
+          <div>
+            <p className="font-display text-[16px] leading-none tracking-[0.26em] text-[#f7f0e4]">
+              SING&nbsp;TONE
+            </p>
+            <p className="mt-1.5 text-[8px] uppercase tracking-[0.3em] text-white/35">
+              gesture chord synth
+            </p>
           </div>
-          <GestureHud keyId={keyId} snapshot={gesture.snapshot} />
+          <Button
+            size="sm"
+            variant="quiet"
+            onClick={openGuide}
+            className="!border-white/15 !text-white/55 hover:!text-white"
+          >
+            Guide
+          </Button>
         </div>
-      </div>
+
+        <InstrumentSelector instrument={audio.instrument} onSelect={audio.selectInstrument} />
+        <KeySelector keyId={keyId} onChange={changeKey} />
+        <PianoRangeSelector range={pianoRange} onChange={changeRange} />
+        <CameraSelector
+          devices={camera.devices}
+          deviceId={camera.deviceId}
+          onSelect={(deviceId) => {
+            if (deviceId) void camera.selectDevice(deviceId);
+          }}
+        />
+
+        <div className="panel flex flex-col gap-1.5 px-3.5 py-3">
+          <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Session</span>
+          <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
+            <span>hands</span>
+            <span className="text-ink">{gesture.handsVisible}</span>
+          </div>
+          <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
+            <span>tracking</span>
+            <span className="text-ink">{tracking.stats.fps} fps</span>
+          </div>
+          <p className="mt-1 text-[9px] leading-snug text-ink-faint">
+            Camera frames stay inside this tab.
+          </p>
+        </div>
+      </aside>
+
+      {/* Stage — camera in the middle */}
+      <section className="relative order-1 flex min-h-[54dvh] min-w-0 flex-1 flex-col gap-2.5 lg:order-2 lg:min-h-0">
+        <div className="relative flex-1 overflow-hidden rounded-[26px] border border-white/10 bg-black shadow-[0_34px_90px_-50px_rgba(0,0,0,0.95)]">
+          <CameraView
+            videoRef={videoRef}
+            status={camera.status}
+            trackingReady={tracking.status === "ready"}
+            handsVisible={gesture.handsVisible}
+            chordActive={chordActive}
+          />
+
+          <HandOverlay canvasRef={canvasRef} />
+          <WaveformVisualizer audioRef={audio.engineRef} />
+
+          <div className="pointer-events-none absolute left-3 top-3 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.24em] text-white/50 backdrop-blur">
+            <span className="h-1 w-1 rounded-full bg-gold-soft/80" />
+            <span>
+              {gesture.handsVisible} {gesture.handsVisible === 1 ? "hand" : "hands"}
+            </span>
+            <span className="text-white/20">·</span>
+            <span>{tracking.stats.fps} fps</span>
+            <span className="hidden text-white/20 sm:inline">·</span>
+            <span className="hidden sm:inline">{audio.instrument}</span>
+          </div>
+
+          {started && tracking.status === "loading" && (
+            <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full border border-white/15 bg-black/50 px-3 py-1 text-[9px] uppercase tracking-[0.24em] text-white/60 backdrop-blur">
+              initialising hand tracking…
+            </div>
+          )}
+
+          {tracking.status === "error" && (
+            <div className="absolute left-1/2 top-12 z-30 w-[min(86%,22rem)] -translate-x-1/2 rounded-2xl border border-white/15 bg-black/70 px-4 py-3 text-center backdrop-blur">
+              <p className="text-[9px] uppercase tracking-[0.26em] text-ember">tracking stopped</p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-white/65">{tracking.error}</p>
+            </div>
+          )}
+
+          {cameraFaulted && (
+            <div className="absolute inset-0 z-40 grid place-items-center bg-[#060508]/75 p-6 backdrop-blur-sm">
+              <div className="panel max-w-sm px-5 py-5 text-center">
+                <p className="text-[9px] uppercase tracking-[0.3em] text-magenta">
+                  camera disconnected
+                </p>
+                <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">{camera.error}</p>
+                <Button variant="gold" size="sm" block className="mt-4" onClick={handleStart}>
+                  {starting ? "reconnecting…" : "reconnect camera"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <GestureHud keyId={keyId} snapshot={gesture.snapshot} />
+      </section>
+
+      {/* Right rail — sound and coaching */}
+      <aside className="scroll-thin order-2 flex w-full shrink-0 flex-col gap-2.5 lg:order-3 lg:w-[288px] lg:overflow-y-auto">
+        <AudioControls
+          status={audio.status}
+          volume={audio.volume}
+          muted={audio.muted}
+          usingFallback={audio.usingFallback}
+          engineRef={audio.engineRef}
+          onVolumeChange={audio.changeVolume}
+          onToggleMute={audio.toggleMute}
+          onEnableAudio={() => {
+            void audio.start();
+          }}
+        />
+
+        <TipsPanel
+          handsVisible={gesture.handsVisible}
+          chordActive={chordActive}
+          audioReady={audio.status === "ready"}
+        />
+
+        <div className="panel flex flex-col gap-1.5 px-3.5 py-3">
+          <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Right hand</span>
+          <p className="text-[11px] leading-relaxed text-ink-soft">
+            Raise it to open the tone and add volume. One to four fingers choose root, 1st
+            inversion, 7th or dominant 7th; the thumb shifts an octave.
+          </p>
+        </div>
+      </aside>
 
       <GuidePanel
         open={guideOpen}
@@ -206,24 +252,6 @@ export default function App() {
         }}
         trackingError={tracking.error}
       />
-
-      {cameraFaulted && (
-        <div className="absolute inset-0 z-40 grid place-items-center bg-[#060508]/70 p-6 backdrop-blur-sm">
-          <div className="panel max-w-sm px-5 py-5 text-center">
-            <p className="text-[9px] uppercase tracking-[0.3em] text-magenta">
-              camera disconnected
-            </p>
-            <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">{camera.error}</p>
-            <button
-              type="button"
-              onClick={handleStart}
-              className="mt-4 w-full rounded-full border border-gold/40 bg-gold/10 px-4 py-2.5 text-[9px] uppercase tracking-[0.28em] text-gold transition hover:bg-gold/15"
-            >
-              {starting ? "reconnecting…" : "reconnect camera"}
-            </button>
-          </div>
-        </div>
-      )}
 
       {!started && <StartGate starting={starting} error={camera.error} onStart={handleStart} />}
     </main>

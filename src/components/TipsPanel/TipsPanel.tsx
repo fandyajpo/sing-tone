@@ -54,7 +54,7 @@ export function TipsPanel({ handsVisible, chordActive, audioReady }: TipsPanelPr
   const tip = pool[index % pool.length] ?? pool[0];
 
   return (
-    <div className="panel-quiet w-[248px] px-3.5 py-3">
+    <div className="panel px-3.5 py-3">
       <div className="mb-1.5 flex items-center gap-2">
         <span className="breathe h-1 w-1 rounded-full bg-gold" />
         <span className="text-[9px] uppercase tracking-[0.26em] text-ink-faint">Tip</span>

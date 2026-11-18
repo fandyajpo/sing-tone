@@ -1,4 +1,5 @@
 import type { CameraDevice } from "../../hooks/useCamera";
+import { Select } from "../ui/Select";
 
 interface CameraSelectorProps {
   devices: CameraDevice[];
@@ -8,25 +9,21 @@ interface CameraSelectorProps {
 
 export function CameraSelector({ devices, deviceId, onSelect }: CameraSelectorProps) {
   return (
-    <div className="panel flex flex-col gap-1 px-3 py-2">
-      <span className="text-[9px] uppercase tracking-[0.22em] text-ink-faint">Camera</span>
-      <div className="select-shell w-[126px] sm:w-[150px]">
-        <select
-          value={deviceId ?? ""}
-          onChange={(event) => onSelect(event.target.value)}
-          aria-label="Camera source"
-        >
-          <option value="">Default camera</option>
-          {devices.map((device, index) => (
-            <option key={device.deviceId || `camera-${index}`} value={device.deviceId}>
-              {device.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-faint">
-        {devices.length > 1 ? `${devices.length} sources` : "local only"}
-      </span>
+    <div className="panel px-3 py-2.5">
+      <Select
+        label="Camera"
+        meta={devices.length > 1 ? `${devices.length} sources` : "local only"}
+        value={deviceId ?? ""}
+        options={[
+          { value: "", label: "Default camera" },
+          ...devices.map((device, index) => ({
+            value: device.deviceId,
+            label: device.label || `Camera ${index + 1}`,
+          })),
+        ]}
+        onChange={onSelect}
+        caption="Video never leaves this tab"
+      />
     </div>
   );
 }
