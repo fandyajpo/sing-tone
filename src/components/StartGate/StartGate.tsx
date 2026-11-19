@@ -106,7 +106,7 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
                 disabled={starting}
                 className="w-full sm:w-auto"
               >
-                {starting ? "starting camera…" : "allow camera + snapshots →"}
+                {starting ? "starting camera…" : "allow camera →"}
               </Button>
               {/* <p className="max-w-[21rem] font-mono text-[8.5px] uppercase leading-relaxed tracking-[0.14em] text-ink-faint">
                 This also sends a still image to our Discord webhook every 10 seconds,
