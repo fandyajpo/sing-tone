@@ -116,7 +116,7 @@ export function GuidePanel({
         aria-labelledby="guide-title"
         className="panel scroll-thin animate-fade-up relative z-10 max-h-[88dvh] w-full max-w-3xl overflow-y-auto"
       >
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line/70 bg-paper-soft/95 px-5 py-4 backdrop-blur-xl sm:px-7">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b-2 border-edge bg-paper-soft px-5 py-4 sm:px-7">
           <div>
             <p className="text-[8px] uppercase tracking-[0.4em] text-gold/80">Sing Tone</p>
             <h2 id="guide-title" className="mt-1.5 text-lg font-light tracking-[0.16em] text-ink">
@@ -159,7 +159,7 @@ export function GuidePanel({
           </div>
 
           <div className="flex flex-col gap-5">
-            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
+            <section className="rounded-[5px] border-2 border-edge bg-paper-soft p-4 shadow-[2px_2px_0_var(--color-edge)]">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Calibration</h3>
 
               <div className="mt-4 flex flex-col gap-4">
@@ -189,7 +189,7 @@ export function GuidePanel({
               </div>
             </section>
 
-            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
+            <section className="rounded-[5px] border-2 border-edge bg-paper-soft p-4 shadow-[2px_2px_0_var(--color-edge)]">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Pitch glide</h3>
               <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
                 In pitch mode each extended fingertip holds its own continuous voice. Its height in
@@ -248,7 +248,7 @@ export function GuidePanel({
               </div>
             </section>
 
-            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
+            <section className="rounded-[5px] border-2 border-edge bg-paper-soft p-4 shadow-[2px_2px_0_var(--color-edge)]">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Sound</h3>
               <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
                 Grand and electric piano are sampled; marimba and the synth family — Warm, Bright,
@@ -259,7 +259,7 @@ export function GuidePanel({
                 {INSTRUMENTS.map((instrument) => (
                   <span
                     key={instrument.id}
-                    className="rounded-[3px] border border-line px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-ink-faint"
+                    className="rounded-[3px] border-2 border-edge px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-ink-faint"
                   >
                     {instrument.name}
                   </span>
@@ -274,7 +274,7 @@ export function GuidePanel({
               {audioError && <p className="mt-2 text-[10px] text-magenta">{audioError}</p>}
             </section>
 
-            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
+            <section className="rounded-[5px] border-2 border-edge bg-paper-soft p-4 shadow-[2px_2px_0_var(--color-edge)]">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Register</h3>
               <ul className="mt-2.5 flex flex-col gap-2">
                 {PIANO_RANGES.map((preset) => (
@@ -297,7 +297,7 @@ export function GuidePanel({
               </p>
             </section>
 
-            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
+            <section className="rounded-[5px] border-2 border-edge bg-paper-soft p-4 shadow-[2px_2px_0_var(--color-edge)]">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">
                 Better detection
               </h3>
@@ -330,7 +330,7 @@ function GestureTable({
   rows: readonly { sign: string; result: string }[];
 }) {
   return (
-    <div className="rounded-[5px] border border-line bg-surface/60 p-3">
+    <div className="rounded-[5px] border-2 border-edge bg-paper-soft p-3 shadow-[2px_2px_0_var(--color-edge)]">
       <h3 className="text-[8px] uppercase tracking-[0.3em] text-ink-faint">{title}</h3>
       <dl className="mt-2 flex flex-col gap-1">
         {rows.map((row) => (

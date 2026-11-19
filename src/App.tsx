@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AudioControls } from "./components/AudioControls/AudioControls";
+import { SettingsSheet } from "./components/BottomSheet/SettingsSheet";
 import { CameraSelector } from "./components/CameraSelector/CameraSelector";
 import { CameraView } from "./components/CameraView/CameraView";
 import { GestureHud } from "./components/GestureHud/GestureHud";
@@ -176,51 +177,81 @@ export default function App() {
   const handsVisible = Math.max(gesture.handsVisible, pitch.snapshot.handsVisible);
   const voiceCount = pitch.snapshot.voices.length;
 
+  const hud = chordMode ? (
+    <GestureHud keyId={keyId} snapshot={gesture.snapshot} />
+  ) : (
+    <PitchMeter window={pitchWindow} snapshot={pitch.snapshot} />
+  );
+
+  const sessionPanel = (
+    <div className="panel flex flex-col gap-1.5 px-3.5 py-3">
+      <span className="text-[9px] font-semibold uppercase tracking-[0.24em] text-gold">
+        Session
+      </span>
+      <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
+        <span>hands</span>
+        <span className="text-ink">{handsVisible}</span>
+      </div>
+      <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
+        <span>tracking</span>
+        <span className="text-ink">{tracking.stats.fps} fps</span>
+      </div>
+      {!chordMode && (
+        <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
+          <span>voices</span>
+          <span className="text-ink">{voiceCount}</span>
+        </div>
+      )}
+      <p className="mt-1 text-[9px] leading-snug text-ink-faint">
+        Camera frames stay inside this tab.
+      </p>
+    </div>
+  );
+
+  const modeButtons = (
+    <div className="flex gap-1.5">
+      <Button
+        size="sm"
+        variant={chordMode ? "solid" : "outline"}
+        aria-pressed={chordMode}
+        onClick={() => changeMode("chords")}
+      >
+        Chords
+      </Button>
+      <Button
+        size="sm"
+        variant={chordMode ? "outline" : "solid"}
+        aria-pressed={!chordMode}
+        onClick={() => changeMode("pitch")}
+      >
+        Pitch
+      </Button>
+    </div>
+  );
+
   return (
-    <main className="relative flex h-dvh w-full flex-col gap-2.5 overflow-y-auto bg-paper p-2.5 text-ink select-none lg:flex-row lg:gap-3 lg:overflow-hidden lg:p-3">
-      {/* Left rail — setup */}
-      <aside className="scroll-thin order-3 flex w-full shrink-0 flex-col gap-2.5 lg:order-1 lg:w-[254px] lg:overflow-y-auto">
+    <main className="relative h-dvh w-full overflow-hidden bg-paper text-ink select-none lg:flex lg:gap-3 lg:p-3">
+      {/* Desktop left rail */}
+      <aside className="scroll-thin hidden w-[254px] shrink-0 flex-col gap-2.5 lg:flex lg:overflow-y-auto">
         <div className="flex items-start justify-between gap-2 px-1 pb-0.5">
           <div>
-            <p className="font-display text-[16px] leading-none tracking-[0.26em] text-ink">
+            <p className="font-display text-[17px] leading-none tracking-[0.22em] text-ink">
               SING&nbsp;TONE
             </p>
             <p className="mt-1.5 text-[8px] uppercase tracking-[0.3em] text-ink-faint">
               gesture chord synth
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="quiet"
-            onClick={openGuide}
-            className="!border-line !bg-transparent !text-ink-soft hover:!text-ink"
-          >
+          <Button size="sm" variant="quiet" onClick={openGuide}>
             Guide
           </Button>
         </div>
 
         <div className="panel flex flex-col gap-2 px-3 py-2.5">
-          <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Mode</span>
-          <div className="flex gap-1.5">
-            <Button
-              size="sm"
-              block
-              variant={chordMode ? "solid" : "outline"}
-              aria-pressed={chordMode}
-              onClick={() => changeMode("chords")}
-            >
-              Chords
-            </Button>
-            <Button
-              size="sm"
-              block
-              variant={chordMode ? "outline" : "solid"}
-              aria-pressed={!chordMode}
-              onClick={() => changeMode("pitch")}
-            >
-              Pitch
-            </Button>
-          </div>
+          <span className="text-[9px] font-semibold uppercase tracking-[0.24em] text-gold">
+            Mode
+          </span>
+          {modeButtons}
           <span className="text-[10px] leading-snug text-ink-faint">
             {chordMode
               ? "Left hand picks the degree, right hand the voicing."
@@ -238,14 +269,14 @@ export default function App() {
           <>
             <PianoRangeSelector range={pianoRange} onChange={changeRange} />
             <div className="panel flex flex-col gap-1 px-3.5 py-2.5">
-              <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">
+              <span className="text-[9px] font-semibold uppercase tracking-[0.24em] text-gold">
                 Pitch window
               </span>
               <span className="font-mono text-[11px] text-ink">
                 {pitchWindow.low} → {pitchWindow.high} midi
               </span>
               <span className="text-[10px] leading-snug text-ink-faint">
-                {rangeHighMidi - rangeLowMidi} semitones available in {pianoRange.label}
+                {rangeHighMidi - rangeLowMidi} semitones in {pianoRange.label}
               </span>
             </div>
           </>
@@ -257,32 +288,12 @@ export default function App() {
             if (deviceId) void camera.selectDevice(deviceId);
           }}
         />
-
-        <div className="panel flex flex-col gap-1.5 px-3.5 py-3">
-          <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Session</span>
-          <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
-            <span>hands</span>
-            <span className="text-ink">{handsVisible}</span>
-          </div>
-          <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
-            <span>tracking</span>
-            <span className="text-ink">{tracking.stats.fps} fps</span>
-          </div>
-          {!chordMode && (
-            <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
-              <span>voices</span>
-              <span className="text-ink">{voiceCount}</span>
-            </div>
-          )}
-          <p className="mt-1 text-[9px] leading-snug text-ink-faint">
-            Camera frames stay inside this tab.
-          </p>
-        </div>
+        {sessionPanel}
       </aside>
 
-      {/* Stage — camera in the middle */}
-      <section className="relative order-1 flex min-h-[54dvh] min-w-0 flex-1 flex-col gap-2.5 lg:order-2 lg:min-h-0">
-        <div className="relative flex-1 overflow-hidden rounded-[6px] border border-line bg-paper shadow-[0_18px_44px_-34px_rgba(0,0,0,0.9)]">
+      {/* Stage: fullscreen camera on phones, centre column on desktop */}
+      <section className="absolute inset-0 lg:static lg:order-2 lg:flex lg:min-w-0 lg:flex-1 lg:flex-col lg:gap-2.5">
+        <div className="relative h-full overflow-hidden bg-paper lg:flex-1 lg:rounded-[9px] lg:border-2 lg:border-edge lg:shadow-[4px_4px_0_var(--color-edge)]">
           <CameraView
             videoRef={videoRef}
             status={camera.status}
@@ -295,34 +306,36 @@ export default function App() {
           <HandOverlay canvasRef={canvasRef} />
           <WaveformVisualizer audioRef={audio.engineRef} />
 
-          <div className="pointer-events-none absolute left-3 top-3 z-20 flex items-center gap-2 rounded-[2px] border border-line/80 bg-paper/80 px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.24em] text-ink-soft backdrop-blur">
-            <span className="h-1 w-1 rounded-[1px] bg-gold" />
+          <div className="pointer-events-none absolute left-3 top-3 z-20 hidden items-center gap-2 rounded-[3px] border-2 border-edge bg-paper/85 px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.24em] text-ink-soft shadow-[2px_2px_0_var(--color-edge)] lg:flex">
+            <span className="h-1.5 w-1.5 rounded-[1px] bg-gold" />
             <span>
               {handsVisible} {handsVisible === 1 ? "hand" : "hands"}
             </span>
             <span className="text-ink-faint/60">·</span>
             <span>{tracking.stats.fps} fps</span>
-            <span className="hidden text-ink-faint/60 sm:inline">·</span>
-            <span className="hidden sm:inline">{audio.instrument}</span>
+            <span className="text-ink-faint/60">·</span>
+            <span>{audio.instrument}</span>
           </div>
 
           {started && tracking.status === "loading" && (
-            <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-[2px] border border-line/80 bg-paper/80 px-3 py-1 text-[9px] uppercase tracking-[0.24em] text-ink-soft backdrop-blur">
+            <div className="absolute left-1/2 top-16 z-20 -translate-x-1/2 rounded-[3px] border-2 border-edge bg-paper/90 px-3 py-1 text-[9px] uppercase tracking-[0.24em] text-ink-soft shadow-[2px_2px_0_var(--color-edge)] lg:top-3">
               initialising hand tracking…
             </div>
           )}
 
           {tracking.status === "error" && (
-            <div className="absolute left-1/2 top-12 z-30 w-[min(86%,22rem)] -translate-x-1/2 rounded-[5px] border border-line bg-surface/95 px-4 py-3 text-center backdrop-blur">
-              <p className="text-[9px] uppercase tracking-[0.26em] text-ember">tracking stopped</p>
+            <div className="absolute left-1/2 top-20 z-30 w-[min(86%,22rem)] -translate-x-1/2 rounded-[6px] border-2 border-edge bg-surface px-4 py-3 text-center shadow-[3px_3px_0_var(--color-edge)] lg:top-12">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.26em] text-ember">
+                tracking stopped
+              </p>
               <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">{tracking.error}</p>
             </div>
           )}
 
           {cameraFaulted && (
-            <div className="absolute inset-0 z-40 grid place-items-center bg-paper/85 p-6 backdrop-blur-sm">
+            <div className="absolute inset-0 z-40 grid place-items-center bg-paper/88 p-6">
               <div className="panel max-w-sm px-5 py-5 text-center">
-                <p className="text-[9px] uppercase tracking-[0.3em] text-magenta">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-magenta">
                   camera disconnected
                 </p>
                 <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">{camera.error}</p>
@@ -334,15 +347,11 @@ export default function App() {
           )}
         </div>
 
-        {chordMode ? (
-          <GestureHud keyId={keyId} snapshot={gesture.snapshot} />
-        ) : (
-          <PitchMeter window={pitchWindow} snapshot={pitch.snapshot} />
-        )}
+        <div className="hidden lg:block">{hud}</div>
       </section>
 
-      {/* Right rail — sound and coaching */}
-      <aside className="scroll-thin order-2 flex w-full shrink-0 flex-col gap-2.5 lg:order-3 lg:w-[288px] lg:overflow-y-auto">
+      {/* Desktop right rail */}
+      <aside className="scroll-thin hidden w-[288px] shrink-0 flex-col gap-2.5 lg:order-3 lg:flex lg:overflow-y-auto">
         <AudioControls
           status={audio.status}
           volume={audio.volume}
@@ -363,7 +372,7 @@ export default function App() {
         />
 
         <div className="panel flex flex-col gap-1.5 px-3.5 py-3">
-          <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">
+          <span className="text-[9px] font-semibold uppercase tracking-[0.24em] text-gold">
             {chordMode ? "Right hand" : "Pitch"}
           </span>
           <p className="text-[11px] leading-relaxed text-ink-soft">
@@ -373,6 +382,62 @@ export default function App() {
           </p>
         </div>
       </aside>
+
+      {/* Mobile chrome */}
+      <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-2 p-2.5 lg:hidden">
+        <div className="rounded-[5px] border-2 border-edge bg-paper/90 px-2.5 py-1.5 shadow-[3px_3px_0_var(--color-edge)] backdrop-blur">
+          <p className="font-display text-[12px] leading-none tracking-[0.2em] text-ink">
+            SING&nbsp;TONE
+          </p>
+          <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.18em] text-ink-faint">
+            {handsVisible}h · {tracking.stats.fps}fps · {audio.instrument}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {modeButtons}
+          <Button size="sm" variant="outline" onClick={openGuide} aria-label="Open guide">
+            ?
+          </Button>
+        </div>
+      </div>
+
+      <SettingsSheet
+        title="Settings"
+        subtitle={`${pianoRange.label} range · ${chordMode ? "chords" : "pitch"} mode`}
+      >
+        {hud}
+        <InstrumentSelector instrument={audio.instrument} onSelect={audio.selectInstrument} />
+        {chordMode && <KeySelector keyId={keyId} onChange={changeKey} />}
+        <PianoRangeSelector range={pianoRange} onChange={changeRange} />
+        <AudioControls
+          status={audio.status}
+          volume={audio.volume}
+          muted={audio.muted}
+          usingFallback={audio.usingFallback}
+          engineRef={audio.engineRef}
+          onVolumeChange={audio.changeVolume}
+          onToggleMute={audio.toggleMute}
+          onEnableAudio={() => {
+            void audio.start();
+          }}
+        />
+        <CameraSelector
+          devices={camera.devices}
+          deviceId={camera.deviceId}
+          onSelect={(deviceId) => {
+            if (deviceId) void camera.selectDevice(deviceId);
+          }}
+        />
+        {sessionPanel}
+        <TipsPanel
+          handsVisible={handsVisible}
+          chordActive={chordActive}
+          audioReady={audio.status === "ready"}
+        />
+        <Button variant="solid" block onClick={openGuide}>
+          Open guide
+        </Button>
+      </SettingsSheet>
 
       <GuidePanel
         open={guideOpen}

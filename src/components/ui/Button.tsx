@@ -10,11 +10,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  solid: "border border-gold/70 bg-gold text-paper hover:bg-gold-soft",
-  gold: "border border-bronze/70 bg-gold/10 text-gold-soft hover:bg-gold/[0.18]",
+  solid: "border-2 border-edge bg-gold text-paper hover:bg-gold-soft",
+  gold: "border-2 border-edge bg-bronze text-paper hover:bg-gold",
   outline:
-    "border border-line bg-paper-soft/70 text-ink-soft hover:border-bronze hover:text-ink",
-  quiet: "border border-transparent text-ink-faint hover:text-ink",
+    "border-2 border-edge bg-paper-soft text-ink hover:bg-surface-raised hover:text-ink",
+  quiet: "btn-quiet border-2 border-transparent text-ink-soft hover:text-ink",
 };
 
 const SIZES: Record<ButtonSize, string> = {

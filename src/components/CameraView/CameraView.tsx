@@ -50,7 +50,7 @@ export function CameraView({
 
       {showHint && (
         <div className="absolute inset-x-0 top-[42%] flex -translate-y-1/2 justify-center px-6">
-          <div className="animate-fade-up max-w-xs rounded-[5px] border border-line/80 bg-paper-soft/85 px-4 py-3 text-center backdrop-blur">
+          <div className="animate-fade-up max-w-xs rounded-[6px] border-2 border-edge bg-paper-soft/90 px-4 py-3 text-center shadow-[3px_3px_0_var(--color-edge)] backdrop-blur">
             <span className="text-[9px] uppercase tracking-[0.3em] text-ink-faint">
               {handsVisible === 0 ? "no hands detected" : pitchMode ? "no fingers held" : "no chord sign"}
             </span>

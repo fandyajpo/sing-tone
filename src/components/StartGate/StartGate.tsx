@@ -32,12 +32,12 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
       <div className="grain" />
 
       <div className="animate-fade-up relative z-10 flex w-full max-w-lg flex-col items-center text-center">
-        <span className="mb-6 flex items-center gap-2 rounded-[4px] border border-line bg-surface/70 px-3 py-1 text-[8px] uppercase tracking-[0.36em] text-ink-soft">
+        <span className="mb-6 flex items-center gap-2 rounded-[4px] border-2 border-edge bg-surface px-3 py-1 text-[8px] uppercase tracking-[0.36em] text-ink-soft shadow-[2px_2px_0_var(--color-edge)]">
           <span className="breathe h-1 w-1 rounded-[1px] bg-gold" />
           real-time · on-device · generative
         </span>
 
-        <h1 className="font-display text-[clamp(2.2rem,8vw,3.6rem)] font-normal leading-none tracking-[0.24em] text-ink">
+        <h1 className="font-display text-[clamp(2.2rem,8vw,3.6rem)] font-normal leading-none tracking-[0.24em] text-ink [text-shadow:3px_3px_0_var(--color-line)]">
           SING&nbsp;TONE
         </h1>
 
@@ -50,7 +50,7 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
           {STEPS.map((step) => (
             <div
               key={step.number}
-              className="rounded-[5px] border border-line bg-surface/70 px-3 py-3 text-left"
+              className="rounded-[5px] border-2 border-edge bg-surface px-3 py-3 text-left shadow-[3px_3px_0_var(--color-edge)] transition-transform duration-150 hover:-translate-y-[2px] hover:shadow-[4px_4px_0_var(--color-edge)]"
             >
               <span className="font-mono text-[9px] tracking-[0.2em] text-gold/80">
                 {step.number}
@@ -81,7 +81,7 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
         {error && (
           <div
             role="alert"
-            className="mt-5 w-full rounded-[5px] border border-ember/40 bg-ember/[0.07] px-4 py-3 text-left"
+            className="mt-5 w-full rounded-[5px] border-2 border-edge bg-ember/[0.12] px-4 py-3 text-left shadow-[3px_3px_0_var(--color-edge)]"
           >
             <p className="text-[9px] uppercase tracking-[0.24em] text-magenta">camera unavailable</p>
             <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">{error}</p>

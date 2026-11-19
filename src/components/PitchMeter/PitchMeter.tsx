@@ -57,10 +57,10 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
           </span>
           <div className="mt-2 flex items-center gap-1.5">
             <span
-              className={`grid h-5 w-5 place-items-center rounded-[4px] border text-[11px] leading-none transition-colors duration-150 ${
+              className={`grid h-5 w-5 place-items-center rounded-[3px] border-2 border-edge text-[11px] leading-none shadow-[2px_2px_0_var(--color-edge)] transition-colors duration-150 ${
                 direction === 0
-                  ? "border-line/70 text-ink-faint"
-                  : "border-bronze/60 bg-gold/10 text-gold-soft"
+                  ? "bg-paper-soft text-ink-faint"
+                  : "bg-gold text-paper"
               }`}
               aria-hidden="true"
             >
@@ -76,7 +76,7 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
         </div>
 
         <div className="relative w-9 shrink-0">
-          <div className="absolute inset-0 overflow-hidden rounded-[4px] border border-line bg-paper/80">
+          <div className="absolute inset-0 overflow-hidden rounded-[4px] border-2 border-edge bg-paper/80">
             <div
               className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-bronze/35 via-gold/12 to-transparent transition-[height] duration-100"
               style={{ height: `${position * 100}%` }}
@@ -116,8 +116,8 @@ function VoiceChip({ voice }: { voice: PitchVoice }) {
   const active = voice.phase === "bending";
   return (
     <span
-      className={`flex items-center gap-1 rounded-[3px] border px-1.5 py-0.5 font-mono text-[9px] tracking-[0.06em] transition-colors duration-150 ${
-        active ? "border-gold/45 bg-gold/10 text-ink" : "border-line/70 bg-surface/60 text-ink-soft"
+      className={`flex items-center gap-1 rounded-[3px] border-2 border-edge px-1.5 py-0.5 font-mono text-[9px] tracking-[0.06em] shadow-[2px_2px_0_var(--color-edge)] transition-all duration-150 ${
+        active ? "bg-gold text-paper" : "bg-paper-soft text-ink-soft"
       }`}
       title={`${voice.hand} ${voice.finger} · ${voice.hz.toFixed(1)} Hz`}
     >

@@ -136,8 +136,8 @@ export class HandVisionRenderer {
     ctx.stroke();
 
     // Extension confidence arc: a fingertip that is only just armed reads short.
-    ctx.strokeStyle = tip.active ? "rgba(232, 197, 138, 0.92)" : "rgba(214, 164, 93, 0.6)";
-    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = tip.active ? "rgba(232, 197, 138, 0.95)" : "rgba(214, 164, 93, 0.6)";
+    ctx.lineWidth = 2.1;
     ctx.beginPath();
     ctx.arc(
       tip.x,
@@ -166,6 +166,23 @@ export class HandVisionRenderer {
     ctx.beginPath();
     ctx.arc(tip.x, tip.y, tip.active ? 3.4 : 2.4, 0, Math.PI * 2);
     ctx.fill();
+
+    // Little corner ticks give the marker a bolder, instrument-panel read.
+    if (tip.active) {
+      const arm = 5;
+      ctx.strokeStyle = "rgba(13, 10, 8, 0.55)";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(tip.x - ringRadius - arm, tip.y - ringRadius);
+      ctx.lineTo(tip.x - ringRadius, tip.y - ringRadius);
+      ctx.lineTo(tip.x - ringRadius, tip.y - ringRadius - arm);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(tip.x + ringRadius + arm, tip.y + ringRadius);
+      ctx.lineTo(tip.x + ringRadius, tip.y + ringRadius);
+      ctx.lineTo(tip.x + ringRadius, tip.y + ringRadius + arm);
+      ctx.stroke();
+    }
 
     if (tip.label) {
       drawNoteLabel(ctx, tip.x, tip.y, tip.label, width);
@@ -202,10 +219,10 @@ function drawNoteLabel(
   const boxX = clamp(x + 15, 6, Math.max(6, width - textWidth - 20));
   const boxY = clamp(y - 29, 8, Number.POSITIVE_INFINITY);
 
-  ctx.fillStyle = "rgba(25, 22, 19, 0.78)";
+  ctx.fillStyle = "rgba(25, 22, 19, 0.9)";
   ctx.fillRect(boxX - 5, boxY, textWidth + 10, 16);
-  ctx.strokeStyle = "rgba(185, 130, 73, 0.45)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(214, 164, 93, 0.75)";
+  ctx.lineWidth = 1.6;
   ctx.strokeRect(boxX - 5.5, boxY + 0.5, textWidth + 11, 15);
 
   ctx.fillStyle = "#f1e8d9";
