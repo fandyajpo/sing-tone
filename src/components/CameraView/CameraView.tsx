@@ -40,21 +40,21 @@ export function CameraView({
         muted
         autoPlay
         aria-label="Live camera feed"
-        className="absolute inset-0 h-full w-full -scale-x-100 object-cover opacity-90"
-        style={{ filter: "saturate(0.6) contrast(1.06) brightness(0.8)" }}
+        className="absolute inset-0 h-full w-full -scale-x-100 object-cover opacity-85"
+        style={{ filter: "saturate(0.55) contrast(1.03) brightness(0.78) sepia(0.14)" }}
       />
 
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(85%_65%_at_50%_32%,rgba(232,165,101,0.06),transparent_62%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(85%_65%_at_50%_32%,rgba(214,164,93,0.05),transparent_62%)]" />
 
-      {status !== "ready" && <div className="absolute inset-0 bg-[#060508]/88 backdrop-blur-md" />}
+      {status !== "ready" && <div className="absolute inset-0 bg-paper/92 backdrop-blur-md" />}
 
       {showHint && (
         <div className="absolute inset-x-0 top-[42%] flex -translate-y-1/2 justify-center px-6">
-          <div className="animate-fade-up max-w-xs rounded-2xl border border-white/10 bg-[#0d0a11]/64 px-4 py-3 text-center backdrop-blur">
-            <span className="text-[9px] uppercase tracking-[0.3em] text-white/45">
+          <div className="animate-fade-up max-w-xs rounded-[5px] border border-line/80 bg-paper-soft/85 px-4 py-3 text-center backdrop-blur">
+            <span className="text-[9px] uppercase tracking-[0.3em] text-ink-faint">
               {handsVisible === 0 ? "no hands detected" : pitchMode ? "no fingers held" : "no chord sign"}
             </span>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-white/55">
+            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">
               {handsVisible === 0
                 ? pitchMode
                   ? "Raise a hand into the frame and extend a finger. Lift it to raise the pitch, lower it to bend down."

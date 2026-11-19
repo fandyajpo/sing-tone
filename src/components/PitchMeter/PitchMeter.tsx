@@ -45,7 +45,7 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
           </span>
           <span
             className="mt-1 font-display text-[30px] leading-none tracking-[0.02em] text-ink transition-[text-shadow] duration-150"
-            style={{ textShadow: moving ? "0 0 22px rgba(232, 165, 101, 0.45)" : "none" }}
+            style={{ textShadow: moving ? "0 0 18px rgba(214, 164, 93, 0.3)" : "none" }}
           >
             {noteName}
             {octave !== undefined && (
@@ -57,18 +57,18 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
           </span>
           <div className="mt-2 flex items-center gap-1.5">
             <span
-              className={`grid h-5 w-5 place-items-center rounded-full border text-[11px] leading-none transition-colors duration-150 ${
+              className={`grid h-5 w-5 place-items-center rounded-[4px] border text-[11px] leading-none transition-colors duration-150 ${
                 direction === 0
-                  ? "border-ink/12 text-ink-faint"
-                  : "border-gold/45 bg-gold/10 text-gold"
+                  ? "border-line/70 text-ink-faint"
+                  : "border-bronze/60 bg-gold/10 text-gold-soft"
               }`}
               aria-hidden="true"
             >
               {DIRECTION_GLYPH[direction]}
             </span>
-            <div className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-ink/10">
+            <div className="relative h-[3px] flex-1 overflow-hidden rounded-[2px] bg-line/60">
               <div
-                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-gold-soft to-gold transition-[width] duration-100"
+                className="absolute inset-y-0 left-0 rounded-[2px] bg-gradient-to-r from-bronze to-gold transition-[width] duration-100"
                 style={{ width: `${Math.min(100, (speed / 12) * 100)}%` }}
               />
             </div>
@@ -76,23 +76,23 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
         </div>
 
         <div className="relative w-9 shrink-0">
-          <div className="absolute inset-0 overflow-hidden rounded-full border border-ink/12 bg-white/70">
+          <div className="absolute inset-0 overflow-hidden rounded-[4px] border border-line bg-paper/80">
             <div
-              className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-gold/25 via-gold/10 to-transparent transition-[height] duration-100"
+              className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-bronze/35 via-gold/12 to-transparent transition-[height] duration-100"
               style={{ height: `${position * 100}%` }}
             />
             {ticksFor(window).map((tick) => (
               <span
                 key={tick.midi}
-                className="absolute left-0 h-px bg-ink/15"
+                className="absolute left-0 h-px bg-line/70"
                 style={{ bottom: `${tick.position * 100}%`, width: tick.octave ? "9px" : "5px" }}
               />
             ))}
             <div
-              className="absolute left-1/2 h-[2px] w-[26px] -translate-x-1/2 rounded-full bg-gold transition-[bottom,box-shadow] duration-100"
+              className="absolute left-1/2 h-[2px] w-[26px] -translate-x-1/2 rounded-[1px] bg-gold transition-[bottom,box-shadow] duration-100"
               style={{
                 bottom: `calc(${position * 100}% - 1px)`,
-                boxShadow: moving ? "0 0 14px rgba(232, 165, 101, 0.75)" : "none",
+                boxShadow: moving ? "0 0 10px rgba(214, 164, 93, 0.45)" : "none",
               }}
             />
           </div>
@@ -116,13 +116,13 @@ function VoiceChip({ voice }: { voice: PitchVoice }) {
   const active = voice.phase === "bending";
   return (
     <span
-      className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[9px] tracking-[0.06em] transition-colors duration-150 ${
-        active ? "border-gold/45 bg-gold/10 text-ink" : "border-ink/10 bg-white/60 text-ink-soft"
+      className={`flex items-center gap-1 rounded-[3px] border px-1.5 py-0.5 font-mono text-[9px] tracking-[0.06em] transition-colors duration-150 ${
+        active ? "border-gold/45 bg-gold/10 text-ink" : "border-line/70 bg-surface/60 text-ink-soft"
       }`}
       title={`${voice.hand} ${voice.finger} · ${voice.hz.toFixed(1)} Hz`}
     >
       <span
-        className={`h-1 w-1 rounded-full ${active ? "bg-gold" : "bg-ink/25"}`}
+        className={`h-1 w-1 rounded-[1px] ${active ? "bg-gold" : "bg-line"}`}
         aria-hidden="true"
       />
       {voice.note}

@@ -27,13 +27,13 @@ const STEPS = [
 export function StartGate({ starting, error, onStart }: StartGateProps) {
   return (
     <div className="absolute inset-0 z-[60] flex items-center justify-center overflow-hidden bg-paper px-5 py-8 text-ink">
-      <div className="pointer-events-none absolute left-1/2 top-[30%] h-[82vmin] w-[82vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(232,165,101,0.35),rgba(232,165,101,0.08)_50%,transparent_72%)] blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 right-[-10%] h-[60vmin] w-[60vmin] rounded-full bg-[radial-gradient(circle,rgba(184,60,95,0.12),transparent_65%)] blur-3xl" />
+      <div className="pointer-events-none absolute left-1/2 top-[30%] h-[82vmin] w-[82vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(214,164,93,0.16),rgba(185,130,73,0.06)_50%,transparent_72%)] blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 right-[-10%] h-[60vmin] w-[60vmin] rounded-full bg-[radial-gradient(circle,rgba(185,130,73,0.08),transparent_65%)] blur-3xl" />
       <div className="grain" />
 
       <div className="animate-fade-up relative z-10 flex w-full max-w-lg flex-col items-center text-center">
-        <span className="mb-6 flex items-center gap-2 rounded-full border border-ink/10 bg-white/70 px-3 py-1 text-[8px] uppercase tracking-[0.36em] text-ink-soft">
-          <span className="breathe h-1 w-1 rounded-full bg-gold" />
+        <span className="mb-6 flex items-center gap-2 rounded-[4px] border border-line bg-surface/70 px-3 py-1 text-[8px] uppercase tracking-[0.36em] text-ink-soft">
+          <span className="breathe h-1 w-1 rounded-[1px] bg-gold" />
           real-time · on-device · generative
         </span>
 
@@ -50,7 +50,7 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
           {STEPS.map((step) => (
             <div
               key={step.number}
-              className="rounded-2xl border border-ink/10 bg-white/75 px-3 py-3 text-left"
+              className="rounded-[5px] border border-line bg-surface/70 px-3 py-3 text-left"
             >
               <span className="font-mono text-[9px] tracking-[0.2em] text-gold/80">
                 {step.number}
@@ -81,7 +81,7 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
         {error && (
           <div
             role="alert"
-            className="mt-5 w-full rounded-2xl border border-magenta/25 bg-magenta/[0.06] px-4 py-3 text-left"
+            className="mt-5 w-full rounded-[5px] border border-ember/40 bg-ember/[0.07] px-4 py-3 text-left"
           >
             <p className="text-[9px] uppercase tracking-[0.24em] text-magenta">camera unavailable</p>
             <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">{error}</p>

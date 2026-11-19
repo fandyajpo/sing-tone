@@ -44,10 +44,10 @@ export function LevelMeter({ engineRef, muted }: LevelMeterProps) {
           <span ref={readoutRef}>−∞</span> dB
         </span>
       </div>
-      <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-ink/10">
+      <div className="relative h-[3px] w-full overflow-hidden rounded-[2px] bg-line/60">
         <div
           ref={barRef}
-          className="absolute inset-0 origin-left rounded-full bg-gradient-to-r from-[#e8a565] via-[#c4553a] to-[#b83c5f]"
+          className="absolute inset-0 origin-left rounded-[2px] bg-gradient-to-r from-bronze via-gold to-gold-soft"
           style={{ transform: "scaleX(0)" }}
         />
       </div>

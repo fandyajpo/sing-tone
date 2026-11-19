@@ -107,7 +107,7 @@ export function GuidePanel({
         type="button"
         aria-label="Close guide"
         onClick={onClose}
-        className="animate-fade-in absolute inset-0 cursor-default bg-[#3b3125]/35 backdrop-blur-md"
+        className="animate-fade-in absolute inset-0 cursor-default bg-paper/75 backdrop-blur-md"
       />
 
       <div
@@ -116,7 +116,7 @@ export function GuidePanel({
         aria-labelledby="guide-title"
         className="panel scroll-thin animate-fade-up relative z-10 max-h-[88dvh] w-full max-w-3xl overflow-y-auto"
       >
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-ink/10 bg-paper-soft/95 px-5 py-4 backdrop-blur-xl sm:px-7">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line/70 bg-paper-soft/95 px-5 py-4 backdrop-blur-xl sm:px-7">
           <div>
             <p className="text-[8px] uppercase tracking-[0.4em] text-gold/80">Sing Tone</p>
             <h2 id="guide-title" className="mt-1.5 text-lg font-light tracking-[0.16em] text-ink">
@@ -126,7 +126,7 @@ export function GuidePanel({
           <Button
             onClick={onClose}
             aria-label="Close guide"
-            className="!h-8 !w-8 !rounded-full !p-0"
+            className="!h-8 !w-8 !rounded-[4px] !p-0"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
               <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -159,7 +159,7 @@ export function GuidePanel({
           </div>
 
           <div className="flex flex-col gap-5">
-            <section className="rounded-xl border border-ink/10 bg-white/75 p-4">
+            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Calibration</h3>
 
               <div className="mt-4 flex flex-col gap-4">
@@ -189,7 +189,7 @@ export function GuidePanel({
               </div>
             </section>
 
-            <section className="rounded-xl border border-ink/10 bg-white/75 p-4">
+            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Pitch glide</h3>
               <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
                 In pitch mode each extended fingertip holds its own continuous voice. Its height in
@@ -248,7 +248,7 @@ export function GuidePanel({
               </div>
             </section>
 
-            <section className="rounded-xl border border-ink/10 bg-white/75 p-4">
+            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Sound</h3>
               <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
                 Grand and electric piano are sampled; marimba and the synth family — Warm, Bright,
@@ -259,7 +259,7 @@ export function GuidePanel({
                 {INSTRUMENTS.map((instrument) => (
                   <span
                     key={instrument.id}
-                    className="rounded-md border border-ink/15 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-ink-faint"
+                    className="rounded-[3px] border border-line px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-ink-faint"
                   >
                     {instrument.name}
                   </span>
@@ -274,7 +274,7 @@ export function GuidePanel({
               {audioError && <p className="mt-2 text-[10px] text-magenta">{audioError}</p>}
             </section>
 
-            <section className="rounded-xl border border-ink/10 bg-white/75 p-4">
+            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">Register</h3>
               <ul className="mt-2.5 flex flex-col gap-2">
                 {PIANO_RANGES.map((preset) => (
@@ -297,7 +297,7 @@ export function GuidePanel({
               </p>
             </section>
 
-            <section className="rounded-xl border border-ink/10 bg-white/75 p-4">
+            <section className="rounded-[5px] border border-line bg-surface/60 p-4">
               <h3 className="text-[9px] uppercase tracking-[0.3em] text-ink-soft">
                 Better detection
               </h3>
@@ -330,7 +330,7 @@ function GestureTable({
   rows: readonly { sign: string; result: string }[];
 }) {
   return (
-    <div className="rounded-xl border border-ink/10 bg-white/75 p-3">
+    <div className="rounded-[5px] border border-line bg-surface/60 p-3">
       <h3 className="text-[8px] uppercase tracking-[0.3em] text-ink-faint">{title}</h3>
       <dl className="mt-2 flex flex-col gap-1">
         {rows.map((row) => (

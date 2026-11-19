@@ -177,15 +177,15 @@ export default function App() {
   const voiceCount = pitch.snapshot.voices.length;
 
   return (
-    <main className="relative flex h-dvh w-full flex-col gap-2.5 overflow-y-auto bg-[#0a080c] p-2.5 text-ink select-none lg:flex-row lg:gap-3 lg:overflow-hidden lg:p-3">
+    <main className="relative flex h-dvh w-full flex-col gap-2.5 overflow-y-auto bg-paper p-2.5 text-ink select-none lg:flex-row lg:gap-3 lg:overflow-hidden lg:p-3">
       {/* Left rail — setup */}
       <aside className="scroll-thin order-3 flex w-full shrink-0 flex-col gap-2.5 lg:order-1 lg:w-[254px] lg:overflow-y-auto">
         <div className="flex items-start justify-between gap-2 px-1 pb-0.5">
           <div>
-            <p className="font-display text-[16px] leading-none tracking-[0.26em] text-[#f7f0e4]">
+            <p className="font-display text-[16px] leading-none tracking-[0.26em] text-ink">
               SING&nbsp;TONE
             </p>
-            <p className="mt-1.5 text-[8px] uppercase tracking-[0.3em] text-white/35">
+            <p className="mt-1.5 text-[8px] uppercase tracking-[0.3em] text-ink-faint">
               gesture chord synth
             </p>
           </div>
@@ -193,7 +193,7 @@ export default function App() {
             size="sm"
             variant="quiet"
             onClick={openGuide}
-            className="!border-white/15 !text-white/55 hover:!text-white"
+            className="!border-line !bg-transparent !text-ink-soft hover:!text-ink"
           >
             Guide
           </Button>
@@ -282,7 +282,7 @@ export default function App() {
 
       {/* Stage — camera in the middle */}
       <section className="relative order-1 flex min-h-[54dvh] min-w-0 flex-1 flex-col gap-2.5 lg:order-2 lg:min-h-0">
-        <div className="relative flex-1 overflow-hidden rounded-[26px] border border-white/10 bg-black shadow-[0_34px_90px_-50px_rgba(0,0,0,0.95)]">
+        <div className="relative flex-1 overflow-hidden rounded-[6px] border border-line bg-paper shadow-[0_18px_44px_-34px_rgba(0,0,0,0.9)]">
           <CameraView
             videoRef={videoRef}
             status={camera.status}
@@ -295,32 +295,32 @@ export default function App() {
           <HandOverlay canvasRef={canvasRef} />
           <WaveformVisualizer audioRef={audio.engineRef} />
 
-          <div className="pointer-events-none absolute left-3 top-3 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.24em] text-white/50 backdrop-blur">
-            <span className="h-1 w-1 rounded-full bg-gold-soft/80" />
+          <div className="pointer-events-none absolute left-3 top-3 z-20 flex items-center gap-2 rounded-[2px] border border-line/80 bg-paper/80 px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.24em] text-ink-soft backdrop-blur">
+            <span className="h-1 w-1 rounded-[1px] bg-gold" />
             <span>
               {handsVisible} {handsVisible === 1 ? "hand" : "hands"}
             </span>
-            <span className="text-white/20">·</span>
+            <span className="text-ink-faint/60">·</span>
             <span>{tracking.stats.fps} fps</span>
-            <span className="hidden text-white/20 sm:inline">·</span>
+            <span className="hidden text-ink-faint/60 sm:inline">·</span>
             <span className="hidden sm:inline">{audio.instrument}</span>
           </div>
 
           {started && tracking.status === "loading" && (
-            <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full border border-white/15 bg-black/50 px-3 py-1 text-[9px] uppercase tracking-[0.24em] text-white/60 backdrop-blur">
+            <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-[2px] border border-line/80 bg-paper/80 px-3 py-1 text-[9px] uppercase tracking-[0.24em] text-ink-soft backdrop-blur">
               initialising hand tracking…
             </div>
           )}
 
           {tracking.status === "error" && (
-            <div className="absolute left-1/2 top-12 z-30 w-[min(86%,22rem)] -translate-x-1/2 rounded-2xl border border-white/15 bg-black/70 px-4 py-3 text-center backdrop-blur">
+            <div className="absolute left-1/2 top-12 z-30 w-[min(86%,22rem)] -translate-x-1/2 rounded-[5px] border border-line bg-surface/95 px-4 py-3 text-center backdrop-blur">
               <p className="text-[9px] uppercase tracking-[0.26em] text-ember">tracking stopped</p>
-              <p className="mt-1.5 text-[11px] leading-relaxed text-white/65">{tracking.error}</p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">{tracking.error}</p>
             </div>
           )}
 
           {cameraFaulted && (
-            <div className="absolute inset-0 z-40 grid place-items-center bg-[#060508]/75 p-6 backdrop-blur-sm">
+            <div className="absolute inset-0 z-40 grid place-items-center bg-paper/85 p-6 backdrop-blur-sm">
               <div className="panel max-w-sm px-5 py-5 text-center">
                 <p className="text-[9px] uppercase tracking-[0.3em] text-magenta">
                   camera disconnected

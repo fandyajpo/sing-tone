@@ -47,14 +47,14 @@ export function WaveformVisualizer({ audioRef }: WaveformVisualizerProps) {
 
       // Hairline at the top of the strip.
       const edge = ctx.createLinearGradient(0, 0, width, 0);
-      edge.addColorStop(0, "rgba(176, 96, 42, 0)");
-      edge.addColorStop(0.5, "rgba(176, 96, 42, 0.28)");
-      edge.addColorStop(1, "rgba(176, 96, 42, 0)");
+      edge.addColorStop(0, "rgba(185, 130, 73, 0)");
+      edge.addColorStop(0.5, "rgba(185, 130, 73, 0.3)");
+      edge.addColorStop(1, "rgba(185, 130, 73, 0)");
       ctx.fillStyle = edge;
       ctx.fillRect(0, 0, width, 1);
 
       // Zero line.
-      ctx.fillStyle = "rgba(42, 36, 28, 0.1)";
+      ctx.fillStyle = "rgba(169, 155, 136, 0.12)";
       ctx.fillRect(0, mid, width, 1);
 
       const stride = data ? Math.max(1, Math.floor(data.length / 320)) : 4;
@@ -82,23 +82,23 @@ export function WaveformVisualizer({ audioRef }: WaveformVisualizerProps) {
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
 
-      ctx.strokeStyle = "rgba(176, 96, 42, 0.14)";
-      ctx.lineWidth = 5;
+      ctx.strokeStyle = "rgba(185, 130, 73, 0.12)";
+      ctx.lineWidth = 4;
       trace(1);
 
       const stroke = ctx.createLinearGradient(0, 0, width, 0);
-      stroke.addColorStop(0, "rgba(196, 85, 58, 0.45)");
-      stroke.addColorStop(0.45, "rgba(176, 96, 42, 0.92)");
-      stroke.addColorStop(0.75, "rgba(196, 85, 58, 0.85)");
-      stroke.addColorStop(1, "rgba(232, 165, 101, 0.5)");
+      stroke.addColorStop(0, "rgba(185, 130, 73, 0.45)");
+      stroke.addColorStop(0.45, "rgba(214, 164, 93, 0.9)");
+      stroke.addColorStop(0.75, "rgba(185, 130, 73, 0.8)");
+      stroke.addColorStop(1, "rgba(232, 197, 138, 0.5)");
       ctx.strokeStyle = stroke;
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1.1;
       trace(1);
 
-      // Soft mirrored glow under the trace.
+      // Soft glow under the trace, kept low so it reads analog, not neon.
       ctx.globalCompositeOperation = "lighter";
-      ctx.strokeStyle = "rgba(176, 96, 42, 0.08)";
-      ctx.lineWidth = 12;
+      ctx.strokeStyle = "rgba(185, 130, 73, 0.05)";
+      ctx.lineWidth = 9;
       trace(1);
       ctx.globalCompositeOperation = "source-over";
     };
@@ -112,11 +112,11 @@ export function WaveformVisualizer({ audioRef }: WaveformVisualizerProps) {
       className="pointer-events-none absolute inset-x-0 bottom-0 z-20 overflow-hidden"
       style={{ height: WAVE_STRIP_HEIGHT }}
     >
-      <div className="absolute inset-0 bg-gradient-to-t from-[#060508]/90 via-[#07050a]/50 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-paper via-paper/60 to-transparent" />
       <canvas ref={canvasRef} className="relative h-full w-full" aria-hidden="true" />
       <div className="absolute bottom-1.5 left-3 flex items-center gap-1.5 sm:left-5">
-        <span className="h-1 w-1 rounded-full bg-gold-soft/70" />
-        <span className="font-mono text-[9px] uppercase tracking-[0.26em] text-white/30">
+        <span className="h-1 w-1 rounded-[1px] bg-gold/70" />
+        <span className="font-mono text-[9px] uppercase tracking-[0.26em] text-ink-faint">
           master out
         </span>
       </div>

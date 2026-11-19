@@ -56,7 +56,7 @@ export function TipsPanel({ handsVisible, chordActive, audioReady }: TipsPanelPr
   return (
     <div className="panel px-3.5 py-3">
       <div className="mb-1.5 flex items-center gap-2">
-        <span className="breathe h-1 w-1 rounded-full bg-gold" />
+        <span className="breathe h-1 w-1 rounded-[1px] bg-gold" />
         <span className="text-[9px] uppercase tracking-[0.26em] text-ink-faint">Tip</span>
       </div>
       <p key={tip} className="animate-fade-in text-[11px] leading-relaxed text-ink-soft">

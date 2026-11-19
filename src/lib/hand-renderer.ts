@@ -106,14 +106,14 @@ export class HandVisionRenderer {
   }
 
   private drawHalo(ctx: CanvasRenderingContext2D, tip: RenderFingertip): void {
-    const radius = tip.active ? 34 : 22;
+    const radius = tip.active ? 28 : 19;
     const glow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, radius);
     glow.addColorStop(
       0,
-      tip.active ? "rgba(255, 206, 142, 0.5)" : "rgba(255, 214, 172, 0.22)",
+      tip.active ? "rgba(232, 197, 138, 0.34)" : "rgba(214, 164, 93, 0.16)",
     );
-    glow.addColorStop(0.5, tip.active ? "rgba(255, 158, 92, 0.16)" : "rgba(255, 200, 160, 0.06)");
-    glow.addColorStop(1, "rgba(255, 150, 90, 0)");
+    glow.addColorStop(0.5, tip.active ? "rgba(185, 130, 73, 0.12)" : "rgba(185, 130, 73, 0.05)");
+    glow.addColorStop(1, "rgba(185, 130, 73, 0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(tip.x, tip.y, radius, 0, Math.PI * 2);
@@ -129,14 +129,14 @@ export class HandVisionRenderer {
     const confidence = clamp01(tip.extension);
 
     // Faint full ring.
-    ctx.strokeStyle = "rgba(255, 224, 190, 0.16)";
+    ctx.strokeStyle = "rgba(232, 197, 138, 0.18)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(tip.x, tip.y, ringRadius, 0, Math.PI * 2);
     ctx.stroke();
 
     // Extension confidence arc: a fingertip that is only just armed reads short.
-    ctx.strokeStyle = tip.active ? "rgba(255, 226, 176, 0.95)" : "rgba(255, 218, 175, 0.55)";
+    ctx.strokeStyle = tip.active ? "rgba(232, 197, 138, 0.92)" : "rgba(214, 164, 93, 0.6)";
     ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.arc(
@@ -150,19 +150,19 @@ export class HandVisionRenderer {
 
     if (tip.active && tip.pulse > 0) {
       const spread = 1 - tip.pulse;
-      ctx.strokeStyle = `rgba(255, 216, 165, ${0.45 * tip.pulse})`;
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = `rgba(232, 197, 138, ${0.35 * tip.pulse})`;
+      ctx.lineWidth = 1.1;
       ctx.beginPath();
-      ctx.arc(tip.x, tip.y, 8 + spread * 30, 0, Math.PI * 2);
+      ctx.arc(tip.x, tip.y, 8 + spread * 24, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.strokeStyle = `rgba(255, 120, 150, ${0.2 * tip.pulse})`;
+      ctx.strokeStyle = `rgba(185, 130, 73, ${0.16 * tip.pulse})`;
       ctx.beginPath();
-      ctx.arc(tip.x, tip.y, 5 + spread * 48, 0, Math.PI * 2);
+      ctx.arc(tip.x, tip.y, 5 + spread * 38, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    ctx.fillStyle = tip.active ? "#ffeccb" : "rgba(255, 230, 200, 0.8)";
+    ctx.fillStyle = tip.active ? "#f1e8d9" : "rgba(232, 197, 138, 0.8)";
     ctx.beginPath();
     ctx.arc(tip.x, tip.y, tip.active ? 3.4 : 2.4, 0, Math.PI * 2);
     ctx.fill();
@@ -176,10 +176,10 @@ export class HandVisionRenderer {
     for (const particle of this.pool) {
       if (particle.life <= 0) continue;
       const alpha = clamp01(particle.life / particle.maxLife);
-      const r = Math.round(240 + particle.ember * 15);
-      const g = Math.round(150 + (1 - particle.ember) * 70);
-      const b = Math.round(90 + particle.ember * 45);
-      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.75})`;
+      const r = Math.round(214 + particle.ember * 18);
+      const g = Math.round(150 + (1 - particle.ember) * 47);
+      const b = Math.round(93 + particle.ember * 35);
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.55})`;
       ctx.beginPath();
       ctx.arc(particle.x, particle.y, particle.size * (0.5 + alpha * 0.9), 0, Math.PI * 2);
       ctx.fill();
@@ -202,13 +202,13 @@ function drawNoteLabel(
   const boxX = clamp(x + 15, 6, Math.max(6, width - textWidth - 20));
   const boxY = clamp(y - 29, 8, Number.POSITIVE_INFINITY);
 
-  ctx.fillStyle = "rgba(8, 6, 10, 0.62)";
+  ctx.fillStyle = "rgba(25, 22, 19, 0.78)";
   ctx.fillRect(boxX - 5, boxY, textWidth + 10, 16);
-  ctx.strokeStyle = "rgba(255, 206, 150, 0.25)";
+  ctx.strokeStyle = "rgba(185, 130, 73, 0.45)";
   ctx.lineWidth = 1;
   ctx.strokeRect(boxX - 5.5, boxY + 0.5, textWidth + 11, 15);
 
-  ctx.fillStyle = "#ffe9c9";
+  ctx.fillStyle = "#f1e8d9";
   ctx.fillText(label, boxX, boxY + 11.5);
   ctx.restore();
 }
