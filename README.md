@@ -9,9 +9,10 @@ model, and hand signs become chords — no keys, no mouse, no controller.
   Thumb out/in shifts the octave, hand height sets volume.
 - **Key**, **note range** (chord register) and **instrument** are chosen in the top bar.
 
-Hand tracking runs in this browser tab, and audio is generated with Tone.js. If the user selects
-the camera-and-snapshots start action, still frames are sent to the configured private Discord
-webhook every 10 seconds, up to 12 per day. The user can stop future uploads at any time.
+Hand tracking runs in this browser tab, and audio is generated with Tone.js. The start action
+discloses that enabling the camera also opts in to sending still frames to the configured Discord
+webhook every 10 seconds, up to 12 per day. No video is uploaded, and the user can stop future
+uploads from the Session panel at any time.
 
 ## Run
 

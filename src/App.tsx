@@ -313,18 +313,20 @@ export default function App() {
           <span className="text-ink">{voiceCount}</span>
         </div>
       )}
-      {/* <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
-        <span>Discord snapshots</span>
-        <span
-          className={
-            snapshot.status === "failed" || snapshot.status === "limited"
-              ? "text-ember"
-              : "text-ink"
-          }
-        >
-          {snapshotLabel}
-        </span>
-      </div> */}
+      {/* {snapshotConsent && (
+        <div className="flex items-center justify-between gap-2 font-mono text-[10px] text-ink-soft">
+          <span>
+            Discord snapshots · {snapshot.status === "failed" ? "failed" : snapshot.status}
+          </span>
+          <button
+            type="button"
+            onClick={() => setSnapshotConsent(false)}
+            className="shrink-0 uppercase tracking-[0.16em] text-magenta underline decoration-dotted underline-offset-2"
+          >
+            stop
+          </button>
+        </div>
+      )} */}
       {snapshot.message &&
         (snapshot.status === "failed" || snapshot.status === "limited") && (
           <p role="status" className="text-[9px] leading-snug text-ember">
@@ -646,9 +648,7 @@ export default function App() {
           starting={starting}
           error={camera.error}
           onStart={() => {
-            // Camera frames stay in the tab: the consent UI is not part of this
-            // screen, so nothing is uploaded by default.
-            void handleStart(false);
+            void handleStart(true);
           }}
         />
       )}

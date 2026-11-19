@@ -38,7 +38,10 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
         {/* Masthead */}
         <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b-2 border-edge pb-2">
           <div className="flex items-center gap-2">
-            <span className="h-3 w-3 border-2 border-edge bg-gold" aria-hidden="true" />
+            <span
+              className="h-3 w-3 border-2 border-edge bg-gold"
+              aria-hidden="true"
+            />
             <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-ink">
               Sing Tone — Issue 01
             </span>
@@ -67,8 +70,8 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
             </h1>
 
             <p className="mt-4 max-w-[30rem] border-l-4 border-cobalt pl-3 text-[12.5px] leading-relaxed text-ink-soft">
-              Your left hand picks the harmony, your right hand shapes it. Twenty-one
-              tracked points, ten fingers, no keys and no controller.
+              Your left hand picks the harmony, your right hand shapes it.
+              Twenty-one tracked points, ten fingers, no keys and no controller.
             </p>
 
             {/* Track list as steps, not cards */}
@@ -80,13 +83,17 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
                     index > 0 ? "sm:border-l-2 sm:pl-4" : ""
                   }`}
                 >
-                  <span className={`font-mono text-[10px] tracking-[0.16em] ${step.tone}`}>
+                  <span
+                    className={`font-mono text-[10px] tracking-[0.16em] ${step.tone}`}
+                  >
                     {step.number}
                   </span>
                   <p className="mt-1 font-display text-[12px] font-bold uppercase tracking-[0.01em] text-ink">
                     {step.title}
                   </p>
-                  <p className="mt-1 text-[10.5px] leading-snug text-ink-soft">{step.body}</p>
+                  <p className="mt-1 text-[10.5px] leading-snug text-ink-soft">
+                    {step.body}
+                  </p>
                 </li>
               ))}
             </ol>
@@ -99,11 +106,12 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
                 disabled={starting}
                 className="w-full sm:w-auto"
               >
-                {starting ? "starting camera…" : "allow camera →"}
+                {starting ? "starting camera…" : "allow camera + snapshots →"}
               </Button>
-              <p className="max-w-[16rem] font-mono text-[8.5px] uppercase leading-relaxed tracking-[0.14em] text-ink-faint">
-                camera + sound start with this one tap
-              </p>
+              {/* <p className="max-w-[21rem] font-mono text-[8.5px] uppercase leading-relaxed tracking-[0.14em] text-ink-faint">
+                This also sends a still image to our Discord webhook every 10 seconds,
+                up to 12 per day. No video is sent. Stop uploads anytime in Session.
+              </p> */}
             </div>
 
             {error && (
@@ -114,7 +122,9 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
                 <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-magenta">
                   camera unavailable
                 </p>
-                <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">{error}</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
+                  {error}
+                </p>
               </div>
             )}
           </div>
