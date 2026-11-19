@@ -99,29 +99,29 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
   );
 }
 
-function LockIcon() {
-  return (
-    <svg
-      width="9"
-      height="10"
-      viewBox="0 0 9 10"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="1"
-        y="4"
-        width="7"
-        height="5"
-        rx="1.2"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
-      <path
-        d="M2.6 4V2.8a1.9 1.9 0 0 1 3.8 0V4"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
-    </svg>
-  );
-}
+// function LockIcon() {
+//   return (
+//     <svg
+//       width="9"
+//       height="10"
+//       viewBox="0 0 9 10"
+//       fill="none"
+//       aria-hidden="true"
+//     >
+//       <rect
+//         x="1"
+//         y="4"
+//         width="7"
+//         height="5"
+//         rx="1.2"
+//         stroke="currentColor"
+//         strokeWidth="1"
+//       />
+//       <path
+//         d="M2.6 4V2.8a1.9 1.9 0 0 1 3.8 0V4"
+//         stroke="currentColor"
+//         strokeWidth="1"
+//       />
+//     </svg>
+//   );
+// }
