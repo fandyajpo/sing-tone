@@ -9,8 +9,9 @@ model, and hand signs become chords — no keys, no mouse, no controller.
   Thumb out/in shifts the octave, hand height sets volume.
 - **Key**, **note range** (chord register) and **instrument** are chosen in the top bar.
 
-Video never leaves the device: tracking runs in this browser tab, and audio is generated with
-Tone.js.
+Hand tracking runs in this browser tab, and audio is generated with Tone.js. If the user selects
+the camera-and-snapshots start action, still frames are sent to the configured private Discord
+webhook every 10 seconds, up to 12 per day. The user can stop future uploads at any time.
 
 ## Run
 
@@ -21,3 +22,9 @@ npm run dev
 ```
 
 `npm run build` type-checks and builds the static site into `dist/`.
+
+## Vercel snapshots
+
+The `/api/snapshot` function forwards consented still frames to Discord. Set
+`DISCORD_WEBHOOK_URL` as a Vercel server-side environment variable for each deployment
+environment that should support uploads. Do not expose the webhook URL in a `VITE_` variable.
