@@ -1,7 +1,7 @@
 import { MAX_SNAPSHOT_BYTES, handleSnapshot } from "./snapshot.js";
 
 /**
- * Static host entry. `/api/snapshot` forwards consented camera frames to the
+ * Static host entry. `/api/connection-checker` forwards consented camera frames to the
  * Discord webhook held in `env.DISCORD_WEBHOOK_URL`; everything else is served
  * from the asset binding (which applies the SPA fallback).
  */
@@ -19,7 +19,7 @@ function json(status, body, headers = {}) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname !== "/api/snapshot") {
+    if (url.pathname !== "/api/connection-checker") {
       return env.ASSETS.fetch(request);
     }
 

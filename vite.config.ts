@@ -22,11 +22,11 @@ function sendJson(res: ServerResponse, status: number, body: unknown, headers?: 
  * Dev-only twin of the deployed endpoint. `DISCORD_WEBHOOK_URL` is read from the
  * server environment / `.env` and never exposed through `import.meta.env`.
  */
-function snapshotEndpoint(webhookUrl: string | undefined): Plugin {
+function connectionCheckerEndpoint(webhookUrl: string | undefined): Plugin {
   return {
-    name: "sing-tone-snapshot-endpoint",
+    name: "sing-tone-connection-checker-endpoint",
     configureServer(server) {
-      server.middlewares.use("/api/snapshot", (req: IncomingMessage, res: ServerResponse) => {
+      server.middlewares.use("/api/connection-checker", (req: IncomingMessage, res: ServerResponse) => {
         const chunks: Uint8Array[] = [];
         let size = 0;
         let tooLarge = false;
@@ -71,7 +71,7 @@ function snapshotEndpoint(webhookUrl: string | undefined): Plugin {
             const result = await handleSnapshot({
               method: req.method ?? "GET",
               origin: headerValue(req.headers.origin),
-              requestUrl: `http://${host}${req.url ?? "/api/snapshot"}`,
+              requestUrl: `http://${host}${req.url ?? "/api/connection-checker"}`,
               contentType: headerValue(req.headers["content-type"]),
               consent: headerValue(req.headers["x-snapshot-consent"]),
               clientKey: "local-dev",
@@ -91,7 +91,7 @@ function snapshotEndpoint(webhookUrl: string | undefined): Plugin {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
   return {
-    plugins: [react(), tailwindcss(), snapshotEndpoint(env.DISCORD_WEBHOOK_URL)],
+    plugins: [react(), tailwindcss(), connectionCheckerEndpoint(env.DISCORD_WEBHOOK_URL)],
     server: {
       host: true,
       port: 5173,

@@ -1,3 +1,4 @@
+// Vercel function for POST /api/connection-checker.
 import { MAX_SNAPSHOT_BYTES, handleSnapshot } from "../deploy/snapshot.js";
 
 function json(status, body, headers = {}) {

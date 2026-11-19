@@ -89,7 +89,7 @@ export async function uploadSnapshot(
   const timer = window.setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
 
   try {
-    const response = await fetch("/api/snapshot", {
+    const response = await fetch("/api/connection-checker", {
       method: "POST",
       headers: {
         "content-type": blob.type || "image/jpeg",

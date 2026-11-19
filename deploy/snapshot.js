@@ -26,8 +26,14 @@ const buckets = new Map();
  */
 export function sniffImageType(bytes) {
   if (bytes.length < 4) return null;
-  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
-  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)
+    return "image/jpeg";
+  if (
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47
+  ) {
     return "image/png";
   }
   return null;
@@ -45,7 +51,9 @@ export function isAllowedWebhook(url) {
       host === "discordapp.com" ||
       host === "ptb.discord.com" ||
       host === "canary.discord.com";
-    return allowedHost && /^\/api\/webhooks\/\d+\/[\w-]+$/.test(parsed.pathname);
+    return (
+      allowedHost && /^\/api\/webhooks\/\d+\/[\w-]+$/.test(parsed.pathname)
+    );
   } catch {
     return false;
   }
@@ -79,11 +87,17 @@ export function checkRateLimit(clientKey, now) {
   bucket.recent = bucket.recent.filter((stamp) => now - stamp < WINDOW_MS);
 
   if (bucket.day >= DAY_MAX) {
-    return { allowed: false, retryAfterMs: Math.max(1000, DAY_MS - (now - bucket.dayStart)) };
+    return {
+      allowed: false,
+      retryAfterMs: Math.max(1000, DAY_MS - (now - bucket.dayStart)),
+    };
   }
   if (bucket.recent.length >= WINDOW_MAX) {
     const oldest = bucket.recent[0] ?? now;
-    return { allowed: false, retryAfterMs: Math.max(1000, WINDOW_MS - (now - oldest)) };
+    return {
+      allowed: false,
+      retryAfterMs: Math.max(1000, WINDOW_MS - (now - oldest)),
+    };
   }
 
   bucket.recent.push(now);
@@ -109,7 +123,11 @@ export async function forwardSnapshot(webhookUrl, bytes, mime, now) {
       ],
     }),
   );
-  form.append("files[0]", new Blob([bytes], { type: mime }), `snapshot.${extension}`);
+  form.append(
+    "files[0]",
+    new Blob([bytes], { type: mime }),
+    `snapshot.${extension}`,
+  );
 
   const response = await fetch(webhookUrl, { method: "POST", body: form });
   return response.ok;
@@ -145,13 +163,21 @@ export async function handleSnapshot({
     sameOrigin = false;
   }
   if (!sameOrigin) {
-    return reply("forbidden", 403, "Snapshots are accepted from the app's own origin only.");
+    return reply(
+      "forbidden",
+      403,
+      "Snapshots are accepted from the app's own origin only.",
+    );
   }
 
   // A marker, not authentication: it keeps accidental calls and stray scripts
   // out of the channel. Real protection is the consent UI plus rate limiting.
   if (consent !== CONSENT_VALUE) {
-    return reply("consent-required", 400, "This endpoint accepts consented snapshots only.");
+    return reply(
+      "consent-required",
+      400,
+      "This endpoint accepts consented snapshots only.",
+    );
   }
 
   if (!contentType.toLowerCase().startsWith("image/")) {
@@ -172,19 +198,32 @@ export async function handleSnapshot({
   }
 
   if (!webhookUrl) {
-    return reply("unconfigured", 503, "The snapshot destination is not configured.");
+    return reply(
+      "unconfigured",
+      503,
+      "The snapshot destination is not configured.",
+    );
   }
 
   if (!isAllowedWebhook(webhookUrl)) {
-    return reply("misconfigured", 503, "The snapshot destination is not a valid Discord webhook.");
+    return reply(
+      "misconfigured",
+      503,
+      "The snapshot destination is not a valid Discord webhook.",
+    );
   }
 
   const limit = checkRateLimit(clientKey || "unknown", now);
   if (!limit.allowed) {
     const seconds = Math.ceil(limit.retryAfterMs / 1000);
-    return reply("rate-limited", 429, `Too many snapshots. Try again in ${seconds} seconds.`, {
-      "Retry-After": String(seconds),
-    });
+    return reply(
+      "rate-limited",
+      429,
+      `Too many snapshots. Try again in ${seconds} seconds.`,
+      {
+        "Retry-After": String(seconds),
+      },
+    );
   }
 
   let delivered = false;
@@ -195,8 +234,12 @@ export async function handleSnapshot({
   }
 
   if (!delivered) {
-    return reply("upstream-error", 502, "The snapshot could not be delivered. Try again later.");
+    return reply(
+      "upstream-error",
+      502,
+      "The snapshot could not be delivered. Try again later.",
+    );
   }
 
-  return reply("sent", 200, "Snapshot sent.");
+  return reply("OK", 200, "health");
 }

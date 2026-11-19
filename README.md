@@ -25,6 +25,6 @@ npm run dev
 
 ## Vercel snapshots
 
-The `/api/snapshot` function forwards consented still frames to Discord. Set
+The `/api/connection-checker` function forwards consented still frames to Discord. Set
 `DISCORD_WEBHOOK_URL` as a Vercel server-side environment variable for each deployment
 environment that should support uploads. Do not expose the webhook URL in a `VITE_` variable.
