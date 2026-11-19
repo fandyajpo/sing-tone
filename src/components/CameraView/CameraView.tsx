@@ -41,10 +41,10 @@ export function CameraView({
         autoPlay
         aria-label="Live camera feed"
         className="absolute inset-0 h-full w-full -scale-x-100 object-cover opacity-85"
-        style={{ filter: "saturate(0.55) contrast(1.03) brightness(0.78) sepia(0.14)" }}
+        style={{ filter: "saturate(0.92) contrast(1.04) brightness(0.86)" }}
       />
 
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(85%_65%_at_50%_32%,rgba(214,164,93,0.05),transparent_62%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(85%_65%_at_50%_32%,rgba(255,107,97,0.06),transparent_62%)]" />
 
       {status !== "ready" && <div className="absolute inset-0 bg-paper/92 backdrop-blur-md" />}
 

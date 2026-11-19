@@ -27,7 +27,7 @@ export function AudioControls({
   onEnableAudio,
 }: AudioControlsProps) {
   return (
-    <div className="panel flex flex-col gap-3 px-3.5 py-3">
+    <div className="panel tone-cobalt flex flex-col gap-2 px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Master out</span>
         <span className="font-mono text-[8px] uppercase tracking-[0.16em] text-gold/80">

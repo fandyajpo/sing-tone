@@ -9,7 +9,7 @@ interface PianoRangeSelectorProps {
 
 export function PianoRangeSelector({ range, onChange }: PianoRangeSelectorProps) {
   return (
-    <div className="panel px-3 py-2.5">
+    <div className="panel tone-lime px-2.5 py-2">
       <Select
         label="Note range"
         meta={range.label}

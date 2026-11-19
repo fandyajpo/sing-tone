@@ -294,7 +294,7 @@ export default function App() {
                 : "starting";
 
   const sessionPanel = (
-    <div className="panel flex flex-col gap-1.5 px-3.5 py-3">
+    <div className="panel tone-mint flex flex-col gap-1 px-3 py-2">
       <span className="text-[9px] font-semibold uppercase tracking-[0.24em] text-gold">
         Session
       </span>
@@ -360,16 +360,18 @@ export default function App() {
   );
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-paper text-ink select-none lg:flex lg:gap-3 lg:p-3">
+    <main className="relative h-dvh w-full overflow-hidden bg-paper text-ink select-none lg:flex lg:gap-2 lg:p-2">
       {/* Desktop left rail */}
-      <aside className="scroll-thin hidden w-[254px] shrink-0 flex-col gap-2.5 lg:flex lg:overflow-y-auto">
-        <div className="flex items-start justify-between gap-2 px-1 pb-0.5">
+      <aside className="scroll-thin hidden w-[226px] shrink-0 flex-col gap-2 lg:flex lg:overflow-y-auto">
+        <div className="flex items-start justify-between gap-2 border-b-2 border-edge px-1 pb-2">
           <div>
-            <p className="font-display text-[17px] leading-none tracking-[0.22em] text-ink">
-              SING&nbsp;TONE
+            <p className="font-display text-[18px] font-bold uppercase leading-[0.84] tracking-[-0.02em] text-ink">
+              Sing
+              <br />
+              Tone
             </p>
-            <p className="mt-1.5 text-[8px] uppercase tracking-[0.3em] text-ink-faint">
-              gesture chord synth
+            <p className="mt-1.5 font-mono text-[7.5px] uppercase tracking-[0.18em] text-ink-faint">
+              gesture chord synth / 01
             </p>
           </div>
           <Button size="sm" variant="quiet" onClick={openGuide}>
@@ -377,7 +379,7 @@ export default function App() {
           </Button>
         </div>
 
-        <div className="panel flex flex-col gap-2 px-3 py-2.5">
+        <div className="panel tone-coral flex flex-col gap-1.5 px-2.5 py-2">
           <span className="text-[9px] font-semibold uppercase tracking-[0.24em] text-gold">
             Mode
           </span>
@@ -401,7 +403,7 @@ export default function App() {
         ) : (
           <>
             <PianoRangeSelector range={pianoRange} onChange={changeRange} />
-            <div className="panel flex flex-col gap-1 px-3.5 py-2.5">
+            <div className="panel tone-tangerine flex flex-col gap-1 px-2.5 py-2">
               <span className="text-[9px] font-semibold uppercase tracking-[0.24em] text-gold">
                 Pitch window
               </span>
@@ -425,7 +427,7 @@ export default function App() {
       </aside>
 
       {/* Stage: fullscreen camera on phones, centre column on desktop */}
-      <section className="absolute inset-0 lg:static lg:order-2 lg:flex lg:min-w-0 lg:flex-1 lg:flex-col lg:gap-2.5">
+      <section className="absolute inset-0 lg:static lg:order-2 lg:flex lg:min-w-0 lg:flex-1 lg:flex-col lg:gap-2">
         <div className="relative h-full overflow-hidden bg-paper lg:flex-1 lg:rounded-[9px] lg:border-2 lg:border-edge lg:shadow-[4px_4px_0_var(--color-edge)]">
           <CameraView
             videoRef={videoRef}
@@ -517,7 +519,7 @@ export default function App() {
       </section>
 
       {/* Desktop right rail */}
-      <aside className="scroll-thin hidden w-[288px] shrink-0 flex-col gap-2.5 lg:order-3 lg:flex lg:overflow-y-auto">
+      <aside className="scroll-thin hidden w-[256px] shrink-0 flex-col gap-2 lg:order-3 lg:flex lg:overflow-y-auto">
         <AudioControls
           status={audio.status}
           volume={audio.volume}
@@ -537,7 +539,7 @@ export default function App() {
           audioReady={audio.status === "ready"}
         />
 
-        <div className="panel flex flex-col gap-1.5 px-3.5 py-3">
+        <div className="panel tone-lilac flex flex-col gap-1 px-3 py-2">
           <span className="text-[9px] font-semibold uppercase tracking-[0.24em] text-gold">
             {chordMode ? "Right hand" : "Pitch"}
           </span>
@@ -552,8 +554,8 @@ export default function App() {
       {/* Mobile chrome */}
       <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-2 p-2.5 lg:hidden">
         <div className="rounded-[5px] border-2 border-edge bg-paper/90 px-2.5 py-1.5 shadow-[3px_3px_0_var(--color-edge)] backdrop-blur">
-          <p className="font-display text-[12px] leading-none tracking-[0.2em] text-ink">
-            SING&nbsp;TONE
+          <p className="font-display text-[12px] font-bold uppercase leading-none tracking-[-0.01em] text-ink">
+            Sing Tone
           </p>
           <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.18em] text-ink-faint">
             {handsVisible}h · {tracking.stats.fps}fps · {audio.instrument}

@@ -9,7 +9,7 @@ interface CameraSelectorProps {
 
 export function CameraSelector({ devices, deviceId, onSelect }: CameraSelectorProps) {
   return (
-    <div className="panel px-3 py-2.5">
+    <div className="panel tone-lemon px-2.5 py-2">
       <Select
         label="Camera"
         meta={devices.length > 1 ? `${devices.length} sources` : "local only"}

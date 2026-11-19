@@ -74,17 +74,21 @@ export function InitializationScreen({ stage, error, onRetry }: InitializationSc
 
   return (
     <div className="absolute inset-0 z-[58] grid place-items-center bg-paper/95 px-5 py-10">
-      <div className="panel w-full max-w-md px-5 py-5">
-        <div className="flex items-center justify-between gap-3">
-          <p className="font-display text-[13px] tracking-[0.24em] text-ink">SING&nbsp;TONE</p>
-          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-gold">
-            {errored ? "stopped" : `${progress}%`}
+      <div className="panel tone-cobalt w-full max-w-md px-5 py-5">
+        <div className="flex items-start justify-between gap-3 border-b-2 border-edge pb-2">
+          <p className="font-display text-[17px] font-bold uppercase leading-[0.86] tracking-[-0.02em] text-ink">
+            Sing
+            <br />
+            Tone
+          </p>
+          <span className="font-display text-[26px] font-bold leading-none tracking-[-0.02em] text-gold">
+            {errored ? "xx" : `${progress}%`}
           </span>
         </div>
 
-        <div className="mt-4 h-2 w-full overflow-hidden rounded-[2px] border-2 border-edge bg-paper">
+        <div className="mt-4 h-2.5 w-full overflow-hidden border-2 border-edge bg-paper">
           <div
-            className="h-full bg-gradient-to-r from-bronze to-gold transition-[width] duration-500"
+            className="h-full bg-[linear-gradient(90deg,var(--color-cobalt),var(--color-coral))] transition-[width] duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>

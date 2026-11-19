@@ -11,7 +11,7 @@ export function KeySelector({ keyId, onChange }: KeySelectorProps) {
   const key = getKey(keyId);
 
   return (
-    <div className="panel px-3 py-2.5">
+    <div className="panel tone-lilac px-2.5 py-2">
       <Select
         label="Key"
         meta={`${key.label} major`}

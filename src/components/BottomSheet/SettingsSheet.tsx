@@ -71,7 +71,7 @@ export function SettingsSheet({ title, subtitle, children }: SettingsSheetProps)
   return (
     <div
       ref={sheetRef}
-      className="fixed inset-x-0 bottom-0 z-40 flex h-[80dvh] flex-col rounded-t-[10px] border-2 border-b-0 border-edge bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex h-[80dvh] flex-col rounded-t-[6px] border-2 border-b-0 border-edge bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
       style={{
         transform: `translateY(${offset}px)`,
         boxShadow: "0 -5px 0 var(--color-edge)",
@@ -119,7 +119,7 @@ export function SettingsSheet({ title, subtitle, children }: SettingsSheetProps)
       </div>
 
       <div className="scroll-thin flex-1 overflow-y-auto overscroll-contain border-t-2 border-edge/60 px-3 pb-8 pt-3">
-        <div className="flex flex-col gap-2.5">{children}</div>
+        <div className="flex flex-col gap-2">{children}</div>
       </div>
     </div>
   );

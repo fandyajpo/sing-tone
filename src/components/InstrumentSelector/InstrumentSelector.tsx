@@ -11,7 +11,7 @@ export function InstrumentSelector({ instrument, onSelect }: InstrumentSelectorP
   const meta = getInstrumentMeta(instrument);
 
   return (
-    <div className="panel px-3 py-2.5">
+    <div className="panel tone-cobalt px-2.5 py-2">
       <Select
         label="Instrument"
         meta={meta.tag}

@@ -26,7 +26,7 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
   const speed = Math.abs(lead?.speed ?? 0);
 
   return (
-    <div className="panel flex flex-col gap-3 px-3.5 py-3">
+    <div className="panel tone-coral flex flex-col gap-2 px-3 py-2">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[9px] uppercase tracking-[0.24em] text-ink-faint">Pitch</p>
@@ -45,7 +45,7 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
             {snapshot.voices.length > 0 ? "sounding" : "silent"}
           </span>
           <span
-            className="mt-1 font-display text-[30px] leading-none tracking-[0.02em] text-ink transition-[text-shadow] duration-150"
+            className="mt-1 font-display text-[34px] font-bold leading-none tracking-[-0.02em] text-ink transition-[text-shadow] duration-150"
             style={{ textShadow: moving ? "0 0 18px rgba(214, 164, 93, 0.3)" : "none" }}
           >
             {noteName}
@@ -64,7 +64,7 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
               className={`grid h-5 w-5 place-items-center rounded-[3px] border-2 border-edge text-[11px] leading-none shadow-[2px_2px_0_var(--color-edge)] transition-colors duration-150 ${
                 direction === 0
                   ? "bg-paper-soft text-ink-faint"
-                  : "bg-gold text-paper"
+                  : "bg-gold text-ink"
               }`}
               aria-hidden="true"
             >
@@ -134,7 +134,7 @@ function VoiceChip({ voice }: { voice: PitchVoice }) {
   return (
     <span
       className={`flex items-center gap-1 rounded-[3px] border-2 border-edge px-1.5 py-0.5 font-mono text-[9px] tracking-[0.06em] shadow-[2px_2px_0_var(--color-edge)] transition-all duration-150 ${
-        active ? "bg-gold text-paper" : "bg-paper-soft text-ink-soft"
+        active ? "bg-gold text-ink" : "bg-paper-soft text-ink-soft"
       }`}
       title={`${voice.hand} ${voice.finger} · ${voice.hz.toFixed(1)} Hz`}
     >

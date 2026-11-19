@@ -25,7 +25,7 @@ export function GestureHud({ keyId, snapshot }: GestureHudProps) {
   const degreeLabel = snapshot.degree === null ? "—" : (DEGREE_ROMANS[snapshot.degree] ?? "—");
 
   return (
-    <div className="panel flex flex-col gap-3 px-3.5 py-3 sm:flex-row sm:items-stretch sm:gap-5 sm:px-5">
+    <div className="panel tone-mint flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-stretch sm:gap-4 sm:px-4">
       <section className="min-w-0 sm:flex-1">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-[9px] font-medium uppercase tracking-[0.22em] text-ink">
@@ -43,7 +43,7 @@ export function GestureHud({ keyId, snapshot }: GestureHudProps) {
                 key={`${root}-${index}`}
                 className={`min-w-[30px] rounded-[3px] border-2 border-edge px-1.5 py-1 text-center font-mono text-[10px] tracking-wide shadow-[2px_2px_0_var(--color-edge)] transition-all duration-150 ${
                   active
-                    ? "-translate-y-[1px] bg-gold text-paper"
+                    ? "-translate-y-[1px] bg-gold text-ink"
                     : "bg-paper-soft text-ink-soft"
                 }`}
                 title={`${DEGREE_ROMANS[index]} · ${MODE_LABELS[snapshot.mode]}`}
@@ -60,7 +60,7 @@ export function GestureHud({ keyId, snapshot }: GestureHudProps) {
 
       <section className="flex min-w-0 flex-col items-center justify-center border-y-2 border-edge/60 py-2.5 sm:w-[200px] sm:border-x-2 sm:border-y-0 sm:px-4 sm:py-0">
         <span className="text-[8px] uppercase tracking-[0.24em] text-ink-faint">Chord</span>
-        <span className="mt-0.5 font-display text-2xl leading-none tracking-[0.04em] text-ink sm:text-[28px]">
+        <span className="mt-0.5 font-display text-[26px] font-bold uppercase leading-none tracking-[-0.01em] text-ink sm:text-[32px]">
           {snapshot.chordName ?? "—"}
         </span>
         <span className="mt-1.5 text-center font-mono text-[8px] uppercase tracking-[0.14em] text-ink-faint">
@@ -93,7 +93,7 @@ export function GestureHud({ keyId, snapshot }: GestureHudProps) {
                 key={voicing}
                 className={`rounded-[3px] border-2 border-edge px-1.5 py-1 text-center font-mono text-[10px] tracking-wide shadow-[2px_2px_0_var(--color-edge)] transition-all duration-150 ${
                   active
-                    ? "-translate-y-[1px] bg-gold text-paper"
+                    ? "-translate-y-[1px] bg-gold text-ink"
                     : "bg-paper-soft text-ink-soft"
                 }`}
               >
@@ -104,7 +104,7 @@ export function GestureHud({ keyId, snapshot }: GestureHudProps) {
           <span
             className={`ml-1 rounded-[3px] border-2 border-edge px-1.5 py-1 font-mono text-[10px] tracking-wide shadow-[2px_2px_0_var(--color-edge)] ${
               snapshot.rightPresent
-                ? "bg-gold text-paper"
+                ? "bg-gold text-ink"
                 : "bg-paper-soft text-ink-faint"
             }`}
           >
