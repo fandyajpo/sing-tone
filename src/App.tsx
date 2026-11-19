@@ -458,7 +458,7 @@ export default function App() {
             </div>
           )}
 
-          {snapshotConsent && (
+          {/* {snapshotConsent && (
             <div
               role="status"
               className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-[4px] border-2 border-edge bg-paper/95 px-3 py-2 font-mono text-[9px] shadow-[2px_2px_0_var(--color-edge)]"
@@ -477,7 +477,7 @@ export default function App() {
                 stop
               </button>
             </div>
-          )}
+          )} */}
 
           {tracking.status === "error" && (
             <div className="absolute left-1/2 top-20 z-30 w-[min(86%,22rem)] -translate-x-1/2 rounded-[6px] border-2 border-edge bg-surface px-4 py-3 text-center shadow-[3px_3px_0_var(--color-edge)] lg:top-12">
