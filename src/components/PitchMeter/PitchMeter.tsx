@@ -1,4 +1,5 @@
 import type { PitchWindow } from "../../lib/pitch-mapping";
+import { STILL_SPEED } from "../../lib/pitch-state";
 import type { PitchSnapshot, PitchVoice } from "../../types/pitch";
 
 interface PitchMeterProps {
@@ -54,6 +55,9 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
           </span>
           <span className="mt-1 font-mono text-[10px] text-ink-faint">
             {hz > 0 ? `${hz.toFixed(1)} Hz` : "— Hz"}
+            {lead && (
+              <span className="ml-2 text-ink-soft">{describe(lead)}</span>
+            )}
           </span>
           <div className="mt-2 flex items-center gap-1.5">
             <span
@@ -112,6 +116,19 @@ export function PitchMeter({ window, snapshot }: PitchMeterProps) {
   );
 }
 
+const MOVE_GLYPH = { up: "↑", down: "↓", horizontal: "↔", stationary: "·" } as const;
+
+function describe(voice: PitchVoice): string {
+  const move = voice.movement === "stationary" ? "held" : voice.movement;
+  const pace =
+    Math.abs(voice.speed) > 8
+      ? "fast"
+      : Math.abs(voice.speed) > STILL_SPEED
+        ? "slow"
+        : "steady";
+  return `${move} ${MOVE_GLYPH[voice.movement]} · ${pace}`;
+}
+
 function VoiceChip({ voice }: { voice: PitchVoice }) {
   const active = voice.phase === "bending";
   return (
@@ -127,6 +144,7 @@ function VoiceChip({ voice }: { voice: PitchVoice }) {
       />
       {voice.note}
       {voice.octave}
+      <span className="text-[8px] text-ink-faint">{MOVE_GLYPH[voice.movement]}</span>
     </span>
   );
 }

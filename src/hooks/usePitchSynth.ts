@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import type { AudioEngine } from "../lib/audio-engine";
-import { GestureHandTracker } from "../lib/gesture-poses";
-import { fingertipsOf, projectPoint, projectionFor } from "../lib/hand-geometry";
+import { FingerClassifier } from "../lib/finger-classifier";
+import type { FingerState } from "../lib/finger-classifier";
+import { projectPoint, projectionFor } from "../lib/hand-geometry";
 import type { RenderFingertip } from "../lib/hand-renderer";
 import { HandVisionRenderer } from "../lib/hand-renderer";
+import { MovementAnalyzer } from "../lib/movement-analyzer";
+import type { MoveSample } from "../lib/movement-analyzer";
 import { frequencyFor, readPitch, type PitchWindow } from "../lib/pitch-mapping";
 import { advanceVoiceState, createVoiceState, STILL_SPEED } from "../lib/pitch-state";
 import type { PitchVoiceState } from "../lib/pitch-state";
+import { FINGER_NAMES } from "../types/hand";
 import type { FingerKey, HandFrame, HandSample } from "../types/hand";
 import type { PitchSnapshot, PitchVoice } from "../types/pitch";
 import { EMPTY_PITCH_SNAPSHOT } from "../types/pitch";
@@ -16,6 +20,14 @@ const MAX_FRAME_GAP_MS = 340;
 const MIN_HAND_CONFIDENCE = 0.35;
 const PUBLISH_INTERVAL_MS = 45;
 const PULSE_MS = 420;
+
+/** States worth drawing, mapped onto the three marker tones. */
+const MARKER_TONE: Partial<Record<FingerState, "detected" | "unstable">> = {
+  extended: "detected",
+  partially_extended: "detected",
+  unstable: "unstable",
+  occluded: "unstable",
+};
 
 export interface UsePitchSynthParams {
   canvasRef: RefObject<HTMLCanvasElement | null>;
@@ -38,11 +50,11 @@ function handOf(hands: HandSample[], side: "left" | "right"): HandSample | null 
 }
 
 /**
- * Turns extended fingertips into continuous pitch voices.
+ * Turns independently classified fingertips into continuous pitch voices.
  *
- * Y is smoothed exponentially, a dead zone keeps a held finger from drifting,
- * and each fingertip owns an independent voice whose frequency is ramped — so
- * moving one finger never touches another finger's pitch.
+ * The classifier decides whether a finger may sound; the movement analyzer
+ * reports how it is moving; the pitch state machine smooths Y and schedules
+ * frequency ramps. Hidden, folded and occluded fingers never reach audio.
  */
 export function usePitchSynth({
   canvasRef,
@@ -58,10 +70,13 @@ export function usePitchSynth({
 }: UsePitchSynthParams): { snapshot: PitchSnapshot } {
   const [snapshot, setSnapshot] = useState<PitchSnapshot>(EMPTY_PITCH_SNAPSHOT);
 
-  const leftTrackerRef = useRef<GestureHandTracker | null>(null);
-  const rightTrackerRef = useRef<GestureHandTracker | null>(null);
-  if (!leftTrackerRef.current) leftTrackerRef.current = new GestureHandTracker();
-  if (!rightTrackerRef.current) rightTrackerRef.current = new GestureHandTracker();
+  const leftClassifierRef = useRef<FingerClassifier | null>(null);
+  const rightClassifierRef = useRef<FingerClassifier | null>(null);
+  if (!leftClassifierRef.current) leftClassifierRef.current = new FingerClassifier();
+  if (!rightClassifierRef.current) rightClassifierRef.current = new FingerClassifier();
+
+  const movementRef = useRef<MovementAnalyzer | null>(null);
+  if (!movementRef.current) movementRef.current = new MovementAnalyzer();
 
   const rendererRef = useRef<HandVisionRenderer | null>(null);
   if (!rendererRef.current) rendererRef.current = new HandVisionRenderer();
@@ -72,10 +87,11 @@ export function usePitchSynth({
   useEffect(() => {
     if (!enabled) return;
     const canvas = canvasRef.current;
-    const leftTracker = leftTrackerRef.current;
-    const rightTracker = rightTrackerRef.current;
+    const leftClassifier = leftClassifierRef.current;
+    const rightClassifier = rightClassifierRef.current;
+    const movement = movementRef.current;
     const renderer = rendererRef.current;
-    if (!canvas || !leftTracker || !rightTracker || !renderer) return;
+    if (!canvas || !leftClassifier || !rightClassifier || !movement || !renderer) return;
 
     const states = new Map<FingerKey, PitchVoiceState>();
     let raf = 0;
@@ -86,6 +102,9 @@ export function usePitchSynth({
       for (const key of states.keys()) audioRef.current?.pitchOff(key);
       states.clear();
       audioRef.current?.pitchReleaseAll();
+      movement.reset();
+      leftClassifier.reset();
+      rightClassifier.reset();
     };
 
     const frameLoop = (now: number) => {
@@ -122,56 +141,79 @@ export function usePitchSynth({
       const feel = feelRef.current;
       const leftHand = handOf(hands, "left");
       const rightHand = handOf(hands, "right");
-      leftTracker.configure(feel.sensitivity, feel.smoothing);
-      rightTracker.configure(feel.sensitivity, feel.smoothing);
-      const leftPose = leftTracker.update(leftHand, aspect, now);
-      const rightPose = rightTracker.update(rightHand, aspect, now);
+      leftClassifier.configure(feel.sensitivity, feel.smoothing);
+      rightClassifier.configure(feel.sensitivity, feel.smoothing);
+      const leftReadings = leftClassifier.update(leftHand, aspect, now);
+      const rightReadings = rightClassifier.update(rightHand, aspect, now);
 
       const seen = new Set<FingerKey>();
+      const moves = new Map<FingerKey, MoveSample>();
       const tips: RenderFingertip[] = [];
 
-      for (const [hand, pose] of [
-        [leftHand, leftPose] as const,
-        [rightHand, rightPose] as const,
+      for (const [hand, readings] of [
+        [leftHand, leftReadings] as const,
+        [rightHand, rightReadings] as const,
       ]) {
-        if (!hand || !pose.present) continue;
+        if (!hand) continue;
 
-        for (const tip of fingertipsOf(hand)) {
-          if (!pose.extended[tip.finger]) continue;
-          seen.add(tip.key);
+        for (const finger of FINGER_NAMES) {
+          const reading = readings[finger];
+          if (!reading || !reading.visible) continue;
 
-          let state = states.get(tip.key);
+          const key = `${hand.handedness}:${finger}` as FingerKey;
+          const move = movement.update(key, reading.x, reading.y, now);
+          if (move) moves.set(key, move);
+          const point = projectPoint(reading.x, reading.y, projection);
+          const lean = move ? Math.max(-26, Math.min(26, move.vy * 26)) : 0;
+
+          if (!reading.active) {
+            const tone = MARKER_TONE[reading.state];
+            if (tone) {
+              tips.push({
+                x: point.x,
+                y: point.y,
+                active: false,
+                extension: reading.extension,
+                label: null,
+                pulse: 0,
+                tone,
+              });
+            }
+            continue;
+          }
+
+          seen.add(key);
+          let state = states.get(key);
 
           if (!state) {
-            state = createVoiceState(tip.y, feel, now);
-            states.set(tip.key, state);
-            audioRef.current?.pitchOn(tip.key, state.midi, state.velocity);
-            const point = projectPoint(tip.x, tip.y, projection);
+            state = createVoiceState(reading.y, feel, now);
+            state.velocity = 0.72 + Math.min(0.24, (move?.speed ?? 0) * 0.2);
+            states.set(key, state);
+            audioRef.current?.pitchOn(key, state.midi, state.velocity);
             renderer.burst(point.x, point.y, 0.55);
           } else {
-            const step = advanceVoiceState(state, tip.y, dt, feel, now);
+            const step = advanceVoiceState(state, reading.y, dt, feel, now);
             if (step.midiChanged) {
-              audioRef.current?.pitchTo(tip.key, state.midi, step.glide);
+              audioRef.current?.pitchTo(key, state.midi, step.glide);
             }
           }
 
-          state.lastY = tip.y;
-
-          const reading = readPitch(state.midi);
-          const point = projectPoint(tip.x, tip.y, projection);
+          const pitch = readPitch(state.midi);
           renderer.emit(point.x, point.y, dt);
           tips.push({
             x: point.x,
             y: point.y,
             active: true,
-            extension: 1,
-            label: reading.note,
+            extension: reading.extension,
+            label: pitch.note,
             pulse: Math.max(0, 1 - (now - state.noteChangedAt) / PULSE_MS),
+            tone: "active",
+            lean,
           });
         }
       }
 
-      // Folded fingers, hidden hands and lost tracking release their own voice.
+      // Voices whose finger left ACTIVE release independently.
       for (const key of [...states.keys()]) {
         if (seen.has(key)) continue;
         states.delete(key);
@@ -181,8 +223,6 @@ export function usePitchSynth({
       renderer.update(dt);
       renderer.draw(ctx, tips, width);
 
-      const count = hands.length;
-
       if (now - lastPublish >= PUBLISH_INTERVAL_MS) {
         lastPublish = now;
         const voices: PitchVoice[] = [];
@@ -191,11 +231,15 @@ export function usePitchSynth({
         for (const [key, state] of states) {
           const [hand, finger] = key.split(":") as [PitchVoice["hand"], string];
           const reading = readPitch(state.midi);
+          const move = moves.get(key);
           const voice: PitchVoice = {
             key,
             finger,
             hand,
             phase: state.phase,
+            state: "active",
+            movement: move?.direction ?? "stationary",
+            movementSpeed: move?.speed ?? 0,
             midi: state.midi,
             note: reading.note,
             octave: reading.octave,
@@ -209,7 +253,7 @@ export function usePitchSynth({
           if (!lead || Math.abs(voice.speed) > Math.abs(lead.speed)) lead = voice;
         }
 
-        setSnapshot({ voices, lead, handsVisible: count });
+        setSnapshot({ voices, lead, handsVisible: hands.length });
       }
     };
 

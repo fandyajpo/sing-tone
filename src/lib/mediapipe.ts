@@ -17,6 +17,9 @@ const useCdnForAssets = import.meta.env.VITE_MEDIAPIPE_CDN === "1";
 export const MODEL_URL = useCdnForAssets ? CDN_MODEL_URL : `${base}models/hand_landmarker.task`;
 export const WASM_URL = useCdnForAssets ? CDN_WASM_URL : `${base}mediapipe/wasm`;
 
+/** Real phases of the landmarker load, reported as they happen. */
+export type MediaPipeStage = "engine" | "model" | "ready";
+
 export interface LandmarkerOptions {
   numHands: number;
   minHandDetectionConfidence: number;
@@ -37,9 +40,12 @@ export const DEFAULT_LANDMARKER_OPTIONS: LandmarkerOptions = {
  */
 export async function createHandLandmarker(
   options: Partial<LandmarkerOptions> = {},
+  onStage?: (stage: MediaPipeStage) => void,
 ): Promise<HandLandmarker> {
   const config: LandmarkerOptions = { ...DEFAULT_LANDMARKER_OPTIONS, ...options };
+  onStage?.("engine");
   const fileset = await FilesetResolver.forVisionTasks(WASM_URL);
+  onStage?.("model");
 
   const build = (delegate: "GPU" | "CPU"): Promise<HandLandmarker> =>
     HandLandmarker.createFromOptions(fileset, {
@@ -51,12 +57,15 @@ export async function createHandLandmarker(
       minTrackingConfidence: config.minTrackingConfidence,
     });
 
+  let landmarker: HandLandmarker;
   try {
-    return await build("GPU");
+    landmarker = await build("GPU");
   } catch {
     // GPU delegate is unavailable on plenty of machines; CPU still runs fine.
-    return await build("CPU");
+    landmarker = await build("CPU");
   }
+  onStage?.("ready");
+  return landmarker;
 }
 
 function toHandedness(label: string): Handedness {

@@ -5,7 +5,7 @@ export const STILL_SPEED = 0.35;
 /** Raw Y jump treated as tracking re-acquisition rather than a slide. */
 const JUMP_THRESHOLD = 0.12;
 
-export type PitchPhase = "idle" | "detected" | "active" | "bending" | "released";
+export type PitchPhase = "active" | "bending" | "stationary";
 
 export interface PitchFeel {
   window: PitchWindow;
@@ -47,8 +47,12 @@ export function createVoiceState(y: number, feel: PitchFeel, now: number): Pitch
   };
 }
 
-function glideFor(feel: PitchFeel): number {
-  return Math.min(0.1, Math.max(0.02, (feel.responseMs / 1000) * 0.45));
+function glideFor(feel: PitchFeel, speed: number): number {
+  const base = Math.min(0.1, Math.max(0.02, (feel.responseMs / 1000) * 0.45));
+  // Fast gestures tighten the ramp so the bend tracks the hand; slow ones stay
+  // smooth and continuous.
+  const tighten = 1 - Math.min(0.65, Math.abs(speed) / 16);
+  return Math.max(0.012, base * tighten);
 }
 
 /**
@@ -90,6 +94,6 @@ export function advanceVoiceState(
     midiChanged = true;
   }
 
-  state.phase = Math.abs(state.speed) > STILL_SPEED ? "bending" : "active";
-  return { midiChanged, glide: glideFor(feel) };
+  state.phase = Math.abs(state.speed) > STILL_SPEED ? "bending" : "stationary";
+  return { midiChanged, glide: glideFor(feel, state.speed) };
 }

@@ -7,6 +7,8 @@ import { GestureHud } from "./components/GestureHud/GestureHud";
 import { GuidePanel } from "./components/GuidePanel/GuidePanel";
 import type { PerformanceSettings } from "./components/GuidePanel/GuidePanel";
 import { HandOverlay } from "./components/HandOverlay/HandOverlay";
+import { InitializationScreen } from "./components/InitializationScreen/InitializationScreen";
+import type { InitStageKey } from "./components/InitializationScreen/InitializationScreen";
 import { InstrumentSelector } from "./components/InstrumentSelector/InstrumentSelector";
 import { KeySelector } from "./components/KeySelector/KeySelector";
 import { PianoRangeSelector } from "./components/PianoRangeSelector/PianoRangeSelector";
@@ -55,6 +57,7 @@ export default function App() {
   const [rangeId, setRangeId] = useState<PianoRangeId>(readStoredPianoRange);
   const [keyId, setKeyId] = useState<KeyId>(readStoredKey);
   const [mode, setMode] = useState<PlayMode>(readStoredMode);
+  const [trackingToken, setTrackingToken] = useState(0);
 
   const pianoRange = useMemo(() => getPianoRange(rangeId), [rangeId]);
   const rangeLowMidi = useMemo(() => noteToMidi(pianoRange.lowest), [pianoRange]);
@@ -110,8 +113,11 @@ export default function App() {
     [settings.detectionConfidence],
   );
 
-  const tracking = useHandTracking(videoRef, trackingEnabled, landmarkerOptions);
-  const trackingLive = trackingEnabled && tracking.status === "ready";
+  const tracking = useHandTracking(videoRef, trackingEnabled, landmarkerOptions, trackingToken);
+  // "ready" status only means the model exists; calibration must finish before
+  // fingertips are allowed to make sound.
+  const trackingLive =
+    trackingEnabled && tracking.status === "ready" && tracking.stage === "ready";
   const chordMode = mode === "chords";
 
   const gesture = useGestureSynth({
@@ -170,6 +176,35 @@ export default function App() {
 
   const openGuide = useCallback(() => setGuideOpen(true), []);
   const closeGuide = useCallback(() => setGuideOpen(false), []);
+
+  const initError =
+    camera.status === "denied" || camera.status === "unavailable" || camera.status === "error"
+      ? camera.error
+      : tracking.status === "error"
+        ? tracking.error
+        : null;
+
+  const initStage: InitStageKey = initError
+    ? "error"
+    : camera.status === "requesting"
+      ? "permission"
+      : tracking.stage === "loading-engine"
+        ? "engine"
+        : tracking.stage === "loading-model"
+          ? "model"
+          : tracking.stage === "calibrating"
+            ? "calibrating"
+            : tracking.stage === "ready"
+              ? "ready"
+              : "preparing";
+
+  const retryInitialization = useCallback(() => {
+    setTrackingToken((token) => token + 1);
+    if (camera.status === "ready") return;
+    void handleStart();
+  }, [camera.status, handleStart]);
+
+  const showInitialization = starting || (started && tracking.stage !== "ready");
 
   const cameraFaulted =
     started && camera.status !== "ready" && camera.status !== "requesting";
@@ -453,6 +488,10 @@ export default function App() {
         }}
         trackingError={tracking.error}
       />
+
+      {showInitialization && (
+        <InitializationScreen stage={initStage} error={initError} onRetry={retryInitialization} />
+      )}
 
       {!started && <StartGate starting={starting} error={camera.error} onStart={handleStart} />}
     </main>

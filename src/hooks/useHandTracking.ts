@@ -11,13 +11,25 @@ export interface TrackingStats {
   hands: number;
 }
 
+/** Real initialization phases; separate from runtime tracking status. */
+export type TrackingStage =
+  | "idle"
+  | "loading-engine"
+  | "loading-model"
+  | "calibrating"
+  | "ready";
+
 export interface UseHandTrackingResult {
   status: TrackingStatus;
+  stage: TrackingStage;
   error: string | null;
   stats: TrackingStats;
   /** Always points at the newest detection result; never triggers a re-render. */
   frameRef: RefObject<HandFrame>;
 }
+
+const CALIBRATION_FRAMES = 8;
+const CALIBRATION_MAX_MS = 1400;
 
 const TARGET_FPS = 30;
 
@@ -25,8 +37,10 @@ export function useHandTracking(
   videoRef: RefObject<HTMLVideoElement | null>,
   enabled: boolean,
   options: LandmarkerOptions,
+  retryToken = 0,
 ): UseHandTrackingResult {
   const [status, setStatus] = useState<TrackingStatus>("idle");
+  const [stage, setStage] = useState<TrackingStage>("idle");
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<TrackingStats>({ fps: 0, hands: 0 });
 
@@ -39,6 +53,7 @@ export function useHandTracking(
   useEffect(() => {
     if (!enabled) {
       setStatus("idle");
+      setStage("idle");
       setError(null);
       frameRef.current = { ...EMPTY_HAND_FRAME };
       return;
@@ -53,8 +68,12 @@ export function useHandTracking(
     let frames = 0;
     let windowStart = performance.now();
     let failures = 0;
+    let calibrated = 0;
+    let calibrationStart = 0;
+    let calibrationDone = false;
 
     setStatus("loading");
+    setStage("loading-engine");
     setError(null);
 
     const loop = () => {
@@ -79,6 +98,16 @@ export function useHandTracking(
         frameRef.current = toHandFrame(result, timestamp, video.videoWidth, video.videoHeight);
         failures = 0;
 
+        // Calibration is real work: wait for a few detections before declaring
+        // the tracker ready, and never show ready before that point.
+        if (!calibrationDone) {
+          calibrated += 1;
+          if (calibrated >= CALIBRATION_FRAMES || now - calibrationStart >= CALIBRATION_MAX_MS) {
+            calibrationDone = true;
+            setStage("ready");
+          }
+        }
+
         frames += 1;
         if (now - windowStart >= 800) {
           const fps = Math.round((frames * 1000) / (now - windowStart));
@@ -99,7 +128,10 @@ export function useHandTracking(
       }
     };
 
-    createHandLandmarker(optionsRef.current)
+    createHandLandmarker(optionsRef.current, (next) => {
+      if (cancelled) return;
+      setStage(next === "engine" ? "loading-engine" : next === "model" ? "loading-model" : "calibrating");
+    })
       .then((created) => {
         if (cancelled) {
           created.close();
@@ -107,12 +139,15 @@ export function useHandTracking(
         }
         landmarker = created;
         landmarkerRef.current = created;
+        calibrationStart = performance.now();
         setStatus("ready");
+        setStage("calibrating");
         raf = requestAnimationFrame(loop);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
         setStatus("error");
+        setStage("idle");
         setError(
           err instanceof Error
             ? `Hand tracking failed to load: ${err.message}`
@@ -130,7 +165,7 @@ export function useHandTracking(
     };
     // `stats` is intentionally excluded: it is written here, never read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, videoRef]);
+  }, [enabled, videoRef, retryToken]);
 
   // Live-update the confidence thresholds without rebuilding the landmarker.
   useEffect(() => {
@@ -154,5 +189,5 @@ export function useHandTracking(
     options.minTrackingConfidence,
   ]);
 
-  return { status, error, stats, frameRef };
+  return { status, stage, error, stats, frameRef };
 }

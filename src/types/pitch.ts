@@ -1,6 +1,8 @@
 import type { FingerKey } from "./hand";
+import type { FingerState } from "../lib/finger-classifier";
+import type { MoveDirection } from "../lib/movement-analyzer";
 
-export type PitchPhase = "idle" | "detected" | "active" | "bending" | "released";
+export type PitchPhase = "active" | "bending" | "stationary";
 
 export type PitchDirection = -1 | 0 | 1;
 
@@ -10,6 +12,11 @@ export interface PitchVoice {
   finger: string;
   hand: "left" | "right";
   phase: PitchPhase;
+  /** Classifier verdict for this fingertip. */
+  state: FingerState;
+  movement: MoveDirection;
+  /** Normalized units per second. */
+  movementSpeed: number;
   /** Fractional MIDI note. */
   midi: number;
   note: string;

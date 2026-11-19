@@ -11,6 +11,10 @@ export interface RenderFingertip {
   label: string | null;
   /** 1 immediately after a strike, decaying to 0. */
   pulse: number;
+  /** active = sounding, detected = confident but not armed, unstable = low trust. */
+  tone?: "active" | "detected" | "unstable";
+  /** Vertical motion in canvas pixels over recent frames, drawn as a trail. */
+  lean?: number;
 }
 
 interface Particle {
@@ -106,13 +110,18 @@ export class HandVisionRenderer {
   }
 
   private drawHalo(ctx: CanvasRenderingContext2D, tip: RenderFingertip): void {
-    const radius = tip.active ? 28 : 19;
+    const tone = tip.tone ?? (tip.active ? "active" : "detected");
+    const radius = tone === "active" ? 28 : tone === "detected" ? 20 : 16;
     const glow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, radius);
     glow.addColorStop(
       0,
-      tip.active ? "rgba(232, 197, 138, 0.34)" : "rgba(214, 164, 93, 0.16)",
+      tone === "active"
+        ? "rgba(232, 197, 138, 0.34)"
+        : tone === "detected"
+          ? "rgba(185, 130, 73, 0.2)"
+          : "rgba(169, 155, 136, 0.12)",
     );
-    glow.addColorStop(0.5, tip.active ? "rgba(185, 130, 73, 0.12)" : "rgba(185, 130, 73, 0.05)");
+    glow.addColorStop(0.5, "rgba(185, 130, 73, 0.07)");
     glow.addColorStop(1, "rgba(185, 130, 73, 0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
@@ -125,8 +134,24 @@ export class HandVisionRenderer {
     tip: RenderFingertip,
     width: number,
   ): void {
-    const ringRadius = tip.active ? 11 : 9.5;
+    const tone = tip.tone ?? (tip.active ? "active" : "detected");
+    const ringRadius = tone === "active" ? 11 : 9;
     const confidence = clamp01(tip.extension);
+    const lean = Math.max(-26, Math.min(26, tip.lean ?? 0));
+
+    // Directional trail behind a moving fingertip.
+    if (tone === "active" && Math.abs(lean) > 1.5) {
+      const trail = ctx.createLinearGradient(tip.x, tip.y, tip.x, tip.y - lean);
+      trail.addColorStop(0, "rgba(232, 197, 138, 0.35)");
+      trail.addColorStop(1, "rgba(232, 197, 138, 0)");
+      ctx.strokeStyle = trail;
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(tip.x, tip.y - lean);
+      ctx.lineTo(tip.x, tip.y);
+      ctx.stroke();
+    }
 
     // Faint full ring.
     ctx.strokeStyle = "rgba(232, 197, 138, 0.18)";
@@ -136,7 +161,12 @@ export class HandVisionRenderer {
     ctx.stroke();
 
     // Extension confidence arc: a fingertip that is only just armed reads short.
-    ctx.strokeStyle = tip.active ? "rgba(232, 197, 138, 0.95)" : "rgba(214, 164, 93, 0.6)";
+    ctx.strokeStyle =
+      tone === "active"
+        ? "rgba(232, 197, 138, 0.95)"
+        : tone === "detected"
+          ? "rgba(185, 130, 73, 0.75)"
+          : "rgba(169, 155, 136, 0.5)";
     ctx.lineWidth = 2.1;
     ctx.beginPath();
     ctx.arc(
@@ -162,13 +192,18 @@ export class HandVisionRenderer {
       ctx.stroke();
     }
 
-    ctx.fillStyle = tip.active ? "#f1e8d9" : "rgba(232, 197, 138, 0.8)";
+    ctx.fillStyle =
+      tone === "active"
+        ? "#f1e8d9"
+        : tone === "detected"
+          ? "rgba(185, 130, 73, 0.9)"
+          : "rgba(169, 155, 136, 0.7)";
     ctx.beginPath();
-    ctx.arc(tip.x, tip.y, tip.active ? 3.4 : 2.4, 0, Math.PI * 2);
+    ctx.arc(tip.x, tip.y, tone === "active" ? 3.4 : 2.4, 0, Math.PI * 2);
     ctx.fill();
 
     // Little corner ticks give the marker a bolder, instrument-panel read.
-    if (tip.active) {
+    if (tone === "active") {
       const arm = 5;
       ctx.strokeStyle = "rgba(13, 10, 8, 0.55)";
       ctx.lineWidth = 2.4;
