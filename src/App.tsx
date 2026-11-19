@@ -330,7 +330,7 @@ export default function App() {
       {snapshot.message &&
         (snapshot.status === "failed" || snapshot.status === "limited") && (
           <p role="status" className="text-[9px] leading-snug text-ember">
-            {snapshot.message}
+            {/* {snapshot.message} */}
           </p>
         )}
       {/* <p className="mt-1 text-[9px] leading-snug text-ink-faint">
