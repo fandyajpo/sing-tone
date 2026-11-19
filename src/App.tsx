@@ -22,10 +22,15 @@ import { useCamera } from "./hooks/useCamera";
 import { useGestureSynth } from "./hooks/useGestureSynth";
 import { useHandTracking } from "./hooks/useHandTracking";
 import { usePitchSynth } from "./hooks/usePitchSynth";
+import { useSnapshotUpload } from "./hooks/useSnapshotUpload";
 import { readStoredKey, storeKey } from "./lib/gesture-chords";
 import type { KeyId } from "./lib/gesture-chords";
 import type { LandmarkerOptions } from "./lib/mediapipe";
-import { getPianoRange, readStoredPianoRange, storePianoRange } from "./lib/piano-ranges";
+import {
+  getPianoRange,
+  readStoredPianoRange,
+  storePianoRange,
+} from "./lib/piano-ranges";
 import type { PianoRangeId } from "./lib/piano-ranges";
 import { clampWindow, windowForBendRange } from "./lib/pitch-mapping";
 import { readStoredMode, storeMode } from "./lib/play-mode";
@@ -52,16 +57,24 @@ export default function App() {
 
   const [started, setStarted] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [snapshotConsent, setSnapshotConsent] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
-  const [settings, setSettings] = useState<PerformanceSettings>(INITIAL_SETTINGS);
+  const [settings, setSettings] =
+    useState<PerformanceSettings>(INITIAL_SETTINGS);
   const [rangeId, setRangeId] = useState<PianoRangeId>(readStoredPianoRange);
   const [keyId, setKeyId] = useState<KeyId>(readStoredKey);
   const [mode, setMode] = useState<PlayMode>(readStoredMode);
   const [trackingToken, setTrackingToken] = useState(0);
 
   const pianoRange = useMemo(() => getPianoRange(rangeId), [rangeId]);
-  const rangeLowMidi = useMemo(() => noteToMidi(pianoRange.lowest), [pianoRange]);
-  const rangeHighMidi = useMemo(() => noteToMidi(pianoRange.highest), [pianoRange]);
+  const rangeLowMidi = useMemo(
+    () => noteToMidi(pianoRange.lowest),
+    [pianoRange],
+  );
+  const rangeHighMidi = useMemo(
+    () => noteToMidi(pianoRange.highest),
+    [pianoRange],
+  );
 
   const pitchWindow = useMemo(
     () =>
@@ -71,14 +84,26 @@ export default function App() {
         rangeLowMidi,
         rangeHighMidi,
       ),
-    [settings.pitchLowMidi, settings.pitchHighMidi, rangeLowMidi, rangeHighMidi],
+    [
+      settings.pitchLowMidi,
+      settings.pitchHighMidi,
+      rangeLowMidi,
+      rangeHighMidi,
+    ],
   );
 
   // The selected note range owns the pitch boundaries.
   useEffect(() => {
     setSettings((previous) => {
-      const next = windowForBendRange(rangeLowMidi, rangeHighMidi, previous.pitchBendRange);
-      if (previous.pitchLowMidi === next.low && previous.pitchHighMidi === next.high) {
+      const next = windowForBendRange(
+        rangeLowMidi,
+        rangeHighMidi,
+        previous.pitchBendRange,
+      );
+      if (
+        previous.pitchLowMidi === next.low &&
+        previous.pitchHighMidi === next.high
+      ) {
         return previous;
       }
       return { ...previous, pitchLowMidi: next.low, pitchHighMidi: next.high };
@@ -107,17 +132,27 @@ export default function App() {
     () => ({
       numHands: 2,
       minHandDetectionConfidence: settings.detectionConfidence,
-      minHandPresenceConfidence: Math.max(0.3, settings.detectionConfidence - 0.1),
+      minHandPresenceConfidence: Math.max(
+        0.3,
+        settings.detectionConfidence - 0.1,
+      ),
       minTrackingConfidence: Math.max(0.3, settings.detectionConfidence - 0.1),
     }),
     [settings.detectionConfidence],
   );
 
-  const tracking = useHandTracking(videoRef, trackingEnabled, landmarkerOptions, trackingToken);
+  const tracking = useHandTracking(
+    videoRef,
+    trackingEnabled,
+    landmarkerOptions,
+    trackingToken,
+  );
   // "ready" status only means the model exists; calibration must finish before
   // fingertips are allowed to make sound.
   const trackingLive =
-    trackingEnabled && tracking.status === "ready" && tracking.stage === "ready";
+    trackingEnabled &&
+    tracking.status === "ready" &&
+    tracking.stage === "ready";
   const chordMode = mode === "chords";
 
   const gesture = useGestureSynth({
@@ -144,24 +179,42 @@ export default function App() {
     enabled: mode === "pitch" && trackingLive,
   });
 
-  const handleStart = useCallback(async () => {
-    if (starting) return;
-    setStarting(true);
-    // Audio must be unlocked inside the click gesture, so start it first and
-    // let the camera request run in parallel.
-    const audioPromise = audio.start();
-    const cameraOk = await camera.start();
-    await audioPromise;
-    if (cameraOk) setStarted(true);
-    setStarting(false);
-  }, [audio, camera, starting]);
+  const snapshot = useSnapshotUpload(
+    videoRef,
+    started && cameraReady && snapshotConsent,
+  );
+
+  const changeSnapshotConsent = useCallback((next: boolean) => {
+    setSnapshotConsent(next);
+  }, []);
+
+  const handleStart = useCallback(
+    async (allowSnapshotUploads = false) => {
+      if (starting) return;
+      setStarting(true);
+      if (allowSnapshotUploads) setSnapshotConsent(true);
+      // Audio must be unlocked inside the click gesture, so start it first and
+      // let the camera request run in parallel.
+      const audioPromise = audio.start();
+      const cameraOk = await camera.start();
+      await audioPromise;
+      if (cameraOk) setStarted(true);
+      else if (allowSnapshotUploads) setSnapshotConsent(false);
+      setStarting(false);
+    },
+    [audio, camera, starting],
+  );
 
   const updateSettings = useCallback(
     (patch: Partial<PerformanceSettings>) => {
       setSettings((previous) => {
         const merged = { ...previous, ...patch };
         if (patch.pitchBendRange !== undefined) {
-          const next = windowForBendRange(rangeLowMidi, rangeHighMidi, merged.pitchBendRange);
+          const next = windowForBendRange(
+            rangeLowMidi,
+            rangeHighMidi,
+            merged.pitchBendRange,
+          );
           merged.pitchLowMidi = next.low;
           merged.pitchHighMidi = next.high;
         }
@@ -178,7 +231,9 @@ export default function App() {
   const closeGuide = useCallback(() => setGuideOpen(false), []);
 
   const initError =
-    camera.status === "denied" || camera.status === "unavailable" || camera.status === "error"
+    camera.status === "denied" ||
+    camera.status === "unavailable" ||
+    camera.status === "error"
       ? camera.error
       : tracking.status === "error"
         ? tracking.error
@@ -204,12 +259,16 @@ export default function App() {
     void handleStart();
   }, [camera.status, handleStart]);
 
-  const showInitialization = starting || (started && tracking.stage !== "ready");
+  const showInitialization =
+    starting || (started && tracking.stage !== "ready");
 
   const cameraFaulted =
     started && camera.status !== "ready" && camera.status !== "requesting";
   const chordActive = chordMode && gesture.snapshot.chordName !== null;
-  const handsVisible = Math.max(gesture.handsVisible, pitch.snapshot.handsVisible);
+  const handsVisible = Math.max(
+    gesture.handsVisible,
+    pitch.snapshot.handsVisible,
+  );
   const voiceCount = pitch.snapshot.voices.length;
 
   const hud = chordMode ? (
@@ -217,6 +276,22 @@ export default function App() {
   ) : (
     <PitchMeter window={pitchWindow} snapshot={pitch.snapshot} />
   );
+
+  const snapshotLabel = !snapshotConsent
+    ? "off"
+    : snapshot.status === "waiting"
+      ? "every 10s"
+      : snapshot.status === "capturing"
+        ? "capturing"
+        : snapshot.status === "uploading"
+          ? "sending"
+          : snapshot.status === "sent"
+            ? "sent"
+            : snapshot.status === "limited"
+              ? "rate limited"
+              : snapshot.status === "failed"
+                ? "failed"
+                : "starting";
 
   const sessionPanel = (
     <div className="panel flex flex-col gap-1.5 px-3.5 py-3">
@@ -237,9 +312,29 @@ export default function App() {
           <span className="text-ink">{voiceCount}</span>
         </div>
       )}
-      <p className="mt-1 text-[9px] leading-snug text-ink-faint">
-        Camera frames stay inside this tab.
-      </p>
+      {/* <div className="flex items-center justify-between font-mono text-[10px] text-ink-soft">
+        <span>Discord snapshots</span>
+        <span
+          className={
+            snapshot.status === "failed" || snapshot.status === "limited"
+              ? "text-ember"
+              : "text-ink"
+          }
+        >
+          {snapshotLabel}
+        </span>
+      </div> */}
+      {snapshot.message &&
+        (snapshot.status === "failed" || snapshot.status === "limited") && (
+          <p role="status" className="text-[9px] leading-snug text-ember">
+            {snapshot.message}
+          </p>
+        )}
+      {/* <p className="mt-1 text-[9px] leading-snug text-ink-faint">
+        {snapshotConsent
+          ? "One still frame is sent to Discord every 10 seconds, up to 12 per day."
+          : "Camera frames stay inside this tab unless you opt in to snapshots."}
+      </p> */}
     </div>
   );
 
@@ -294,7 +389,10 @@ export default function App() {
           </span>
         </div>
 
-        <InstrumentSelector instrument={audio.instrument} onSelect={audio.selectInstrument} />
+        <InstrumentSelector
+          instrument={audio.instrument}
+          onSelect={audio.selectInstrument}
+        />
         {chordMode ? (
           <>
             <KeySelector keyId={keyId} onChange={changeKey} />
@@ -358,12 +456,35 @@ export default function App() {
             </div>
           )}
 
+          {snapshotConsent && (
+            <div
+              role="status"
+              className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-[4px] border-2 border-edge bg-paper/95 px-3 py-2 font-mono text-[9px] shadow-[2px_2px_0_var(--color-edge)]"
+              aria-live="polite"
+            >
+              <span>
+                Discord ·{" "}
+                {snapshot.status === "failed" ? "upload failed" : snapshotLabel}{" "}
+                · max 12/day
+              </span>
+              <button
+                type="button"
+                onClick={() => changeSnapshotConsent(false)}
+                className="uppercase tracking-[0.16em] text-magenta underline decoration-dotted underline-offset-2"
+              >
+                stop
+              </button>
+            </div>
+          )}
+
           {tracking.status === "error" && (
             <div className="absolute left-1/2 top-20 z-30 w-[min(86%,22rem)] -translate-x-1/2 rounded-[6px] border-2 border-edge bg-surface px-4 py-3 text-center shadow-[3px_3px_0_var(--color-edge)] lg:top-12">
               <p className="text-[9px] font-semibold uppercase tracking-[0.26em] text-ember">
                 tracking stopped
               </p>
-              <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">{tracking.error}</p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">
+                {tracking.error}
+              </p>
             </div>
           )}
 
@@ -373,8 +494,18 @@ export default function App() {
                 <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-magenta">
                   camera disconnected
                 </p>
-                <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">{camera.error}</p>
-                <Button variant="gold" size="sm" block className="mt-4" onClick={handleStart}>
+                <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
+                  {camera.error}
+                </p>
+                <Button
+                  variant="gold"
+                  size="sm"
+                  block
+                  className="mt-4"
+                  onClick={() => {
+                    void handleStart();
+                  }}
+                >
                   {starting ? "reconnecting…" : "reconnect camera"}
                 </Button>
               </div>
@@ -430,7 +561,12 @@ export default function App() {
         </div>
         <div className="flex items-center gap-1.5">
           {modeButtons}
-          <Button size="sm" variant="outline" onClick={openGuide} aria-label="Open guide">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={openGuide}
+            aria-label="Open guide"
+          >
             ?
           </Button>
         </div>
@@ -441,7 +577,10 @@ export default function App() {
         subtitle={`${pianoRange.label} range · ${chordMode ? "chords" : "pitch"} mode`}
       >
         {hud}
-        <InstrumentSelector instrument={audio.instrument} onSelect={audio.selectInstrument} />
+        <InstrumentSelector
+          instrument={audio.instrument}
+          onSelect={audio.selectInstrument}
+        />
         {chordMode && <KeySelector keyId={keyId} onChange={changeKey} />}
         <PianoRangeSelector range={pianoRange} onChange={changeRange} />
         <AudioControls
@@ -490,10 +629,22 @@ export default function App() {
       />
 
       {showInitialization && (
-        <InitializationScreen stage={initStage} error={initError} onRetry={retryInitialization} />
+        <InitializationScreen
+          stage={initStage}
+          error={initError}
+          onRetry={retryInitialization}
+        />
       )}
 
-      {!started && <StartGate starting={starting} error={camera.error} onStart={handleStart} />}
+      {!started && (
+        <StartGate
+          starting={starting}
+          error={camera.error}
+          onStart={() => {
+            void handleStart(true);
+          }}
+        />
+      )}
     </main>
   );
 }

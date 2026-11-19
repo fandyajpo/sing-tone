@@ -1,7 +1,10 @@
 {
   "entrypoint": "worker.js",
   "compatibilityDate": "2026-11-18",
-  "modules": [{ "name": "worker.js", "type": "esm", "path": "./deploy/worker.js" }],
+  "modules": [
+    { "name": "worker.js", "type": "esm", "path": "./deploy/worker.js" },
+    { "name": "snapshot.js", "type": "esm", "path": "./deploy/snapshot.js" }
+  ],
   "assetsDirectory": "./dist",
   "spa": true
 }

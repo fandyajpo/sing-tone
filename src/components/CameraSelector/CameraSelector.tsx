@@ -22,7 +22,7 @@ export function CameraSelector({ devices, deviceId, onSelect }: CameraSelectorPr
           })),
         ]}
         onChange={onSelect}
-        caption="Video never leaves this tab"
+        caption="Video stays local unless you allow a snapshot"
       />
     </div>
   );

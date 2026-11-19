@@ -39,7 +39,7 @@ const STAGES: readonly StageInfo[] = [
   {
     key: "model",
     title: "Loading AI vision model…",
-    detail: "Fetching the 21-point hand model. Nothing leaves this device.",
+    detail: "Fetching the 21-point hand model. The model runs on this device.",
     progress: 68,
   },
   {

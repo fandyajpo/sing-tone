@@ -42,8 +42,8 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
         </h1>
 
         <p className="mt-5 max-w-sm text-[13px] leading-relaxed text-ink-soft">
-          An invisible chord instrument. Your left hand picks the harmony, your right hand shapes
-          it — no keys, no mouse, no controller.
+          An invisible chord instrument. Your left hand picks the harmony, your
+          right hand shapes it — no keys, no mouse, no controller.
         </p>
 
         <div className="mt-8 grid w-full gap-2 sm:grid-cols-3">
@@ -58,7 +58,9 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
               <p className="mt-1 text-[11px] font-medium tracking-[0.04em] text-ink">
                 {step.title}
               </p>
-              <p className="mt-1 text-[10.5px] leading-snug text-ink-soft">{step.body}</p>
+              <p className="mt-1 text-[10.5px] leading-snug text-ink-soft">
+                {step.body}
+              </p>
             </div>
           ))}
         </div>
@@ -69,13 +71,14 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
           block
           onClick={onStart}
           disabled={starting}
-          className="mt-8"
+          className="mt-4"
         >
-          {starting ? "starting camera…" : "enter the instrument"}
+          {starting ? "starting camera…" : "allow camera & send snapshots"}
         </Button>
 
         <p className="mt-4 text-[10.5px] leading-relaxed text-ink-faint">
-          Your browser will ask for camera access. Sound starts with the same tap.
+          Your browser will ask for camera access. Sound starts with the same
+          tap.
         </p>
 
         {error && (
@@ -83,15 +86,14 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
             role="alert"
             className="mt-5 w-full rounded-[5px] border-2 border-edge bg-ember/[0.12] px-4 py-3 text-left shadow-[3px_3px_0_var(--color-edge)]"
           >
-            <p className="text-[9px] uppercase tracking-[0.24em] text-magenta">camera unavailable</p>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">{error}</p>
+            <p className="text-[9px] uppercase tracking-[0.24em] text-magenta">
+              camera unavailable
+            </p>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">
+              {error}
+            </p>
           </div>
         )}
-
-        <p className="mt-7 flex items-center gap-2 text-[9px] uppercase tracking-[0.24em] text-ink-faint">
-          <LockIcon />
-          video never leaves this device
-        </p>
       </div>
     </div>
   );
@@ -99,9 +101,27 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
 
 function LockIcon() {
   return (
-    <svg width="9" height="10" viewBox="0 0 9 10" fill="none" aria-hidden="true">
-      <rect x="1" y="4" width="7" height="5" rx="1.2" stroke="currentColor" strokeWidth="1" />
-      <path d="M2.6 4V2.8a1.9 1.9 0 0 1 3.8 0V4" stroke="currentColor" strokeWidth="1" />
+    <svg
+      width="9"
+      height="10"
+      viewBox="0 0 9 10"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="1"
+        y="4"
+        width="7"
+        height="5"
+        rx="1.2"
+        stroke="currentColor"
+        strokeWidth="1"
+      />
+      <path
+        d="M2.6 4V2.8a1.9 1.9 0 0 1 3.8 0V4"
+        stroke="currentColor"
+        strokeWidth="1"
+      />
     </svg>
   );
 }
