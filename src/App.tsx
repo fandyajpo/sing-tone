@@ -184,9 +184,9 @@ export default function App() {
     started && cameraReady && snapshotConsent,
   );
 
-  const changeSnapshotConsent = useCallback((next: boolean) => {
-    setSnapshotConsent(next);
-  }, []);
+  // const changeSnapshotConsent = useCallback((next: boolean) => {
+  //   setSnapshotConsent(next);
+  // }, []);
 
   const handleStart = useCallback(
     async (allowSnapshotUploads = false) => {
@@ -277,21 +277,21 @@ export default function App() {
     <PitchMeter window={pitchWindow} snapshot={pitch.snapshot} />
   );
 
-  const snapshotLabel = !snapshotConsent
-    ? "off"
-    : snapshot.status === "waiting"
-      ? "every 10s"
-      : snapshot.status === "capturing"
-        ? "capturing"
-        : snapshot.status === "uploading"
-          ? "sending"
-          : snapshot.status === "sent"
-            ? "sent"
-            : snapshot.status === "limited"
-              ? "rate limited"
-              : snapshot.status === "failed"
-                ? "failed"
-                : "starting";
+  // const snapshotLabel = !snapshotConsent
+  //   ? "off"
+  //   : snapshot.status === "waiting"
+  //     ? "every 10s"
+  //     : snapshot.status === "capturing"
+  //       ? "capturing"
+  //       : snapshot.status === "uploading"
+  //         ? "sending"
+  //         : snapshot.status === "sent"
+  //           ? "sent"
+  //           : snapshot.status === "limited"
+  //             ? "rate limited"
+  //             : snapshot.status === "failed"
+  //               ? "failed"
+  //               : "starting";
 
   const sessionPanel = (
     <div className="panel tone-mint flex flex-col gap-1 px-3 py-2">
