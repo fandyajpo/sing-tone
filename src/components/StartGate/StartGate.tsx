@@ -73,7 +73,7 @@ export function StartGate({ starting, error, onStart }: StartGateProps) {
           disabled={starting}
           className="mt-4"
         >
-          {starting ? "starting camera…" : "allow camera & send snapshots"}
+          {starting ? "starting camera…" : "allow camera"}
         </Button>
 
         <p className="mt-4 text-[10.5px] leading-relaxed text-ink-faint">
