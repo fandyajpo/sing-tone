@@ -1,16 +1,16 @@
-import type { FingerName, HandSample } from "../types/hand";
+import type { HandSample } from "../types/hand";
 import { pointAt, clamp } from "./hand-geometry";
-import { EXTENSION_CONFIG, fingerExtensionScores } from "./finger-extension";
+import type { FingerReadings } from "./finger-classifier";
 import type { ChordMode, ChordVoicing } from "./gesture-chords";
 
-export const FINGER_ORDER: readonly FingerName[] = ["thumb", "index", "middle", "ring", "pinky"];
+export const FINGER_ORDER = ["thumb", "index", "middle", "ring", "pinky"] as const;
 
-export type ExtendedMap = Record<FingerName, boolean>;
+export type ExtendedMap = Record<(typeof FINGER_ORDER)[number], boolean>;
 
 export interface HandPose {
   present: boolean;
   extended: ExtendedMap;
-  /** Extended index→pinky count (the thumb is handled separately). */
+  /** OPEN index→pinky count (the thumb is handled separately). */
   nonThumbCount: number;
   /** Knuckle-line tilt, -1..1. Positive = index knuckle lower than the pinky. */
   tilt: number;
@@ -34,79 +34,18 @@ export const ABSENT_POSE: HandPose = {
   height: 0.5,
 };
 
-interface FingerGate {
-  score: number;
-  extended: boolean;
-  enteredAt: number;
-  exitedAt: number;
-}
-
-function makeGate(): FingerGate {
-  return { score: 0, extended: false, enteredAt: 0, exitedAt: 0 };
-}
-
 /**
- * Turns the per-finger extension scores into a debounced hand pose. Same
- * hysteresis and debounce rules as the fingertip detector, so a single noisy
- * frame can never flip a chord.
+ * Converts per-finger recognition into the chord pose. A finger only counts
+ * when the recognizer has it OPEN, so folded, partial, occluded, unstable and
+ * unknown fingers can never build a chord.
  */
 export class GestureHandTracker {
-  private gates: Record<FingerName, FingerGate> = {
-    thumb: makeGate(),
-    index: makeGate(),
-    middle: makeGate(),
-    ring: makeGate(),
-    pinky: makeGate(),
-  };
+  update(hand: HandSample | null, readings: FingerReadings | null, aspect = 1): HandPose {
+    if (!hand || hand.landmarks.length < 21 || !readings) return ABSENT_POSE;
 
-  /** Sensitivity 0..1 lowers the extension threshold; smoothing 0..1 slows the score. */
-  private enter = EXTENSION_CONFIG.enter;
-  private exit = EXTENSION_CONFIG.exit;
-  private alpha = EXTENSION_CONFIG.smoothing;
-
-  configure(sensitivity: number, smoothing: number): void {
-    const s = Math.max(0, Math.min(1, sensitivity));
-    const m = Math.max(0, Math.min(1, smoothing));
-    this.enter = 0.32 + (1 - s) * 0.4;
-    this.exit = Math.max(0.12, this.enter - 0.17);
-    this.alpha = 0.1 + (1 - m) * 0.42;
-  }
-
-  update(hand: HandSample | null, aspect: number, now: number): HandPose {
-    if (!hand || hand.landmarks.length < 21) {
-      for (const finger of FINGER_ORDER) {
-        const gate = this.gates[finger];
-        gate.score = 0;
-        gate.extended = false;
-        gate.enteredAt = 0;
-        gate.exitedAt = 0;
-      }
-      return ABSENT_POSE;
-    }
-
-    const scores = fingerExtensionScores(hand, aspect);
     const extended: ExtendedMap = { ...EMPTY_EXTENDED };
-
     for (const finger of FINGER_ORDER) {
-      const gate = this.gates[finger];
-      const raw = scores[finger] ?? 0;
-      gate.score += (raw - gate.score) * this.alpha;
-
-      if (!gate.extended) {
-        if (gate.score >= this.enter) {
-          if (gate.enteredAt === 0) gate.enteredAt = now;
-          if (now - gate.enteredAt >= EXTENSION_CONFIG.debounceMs) gate.extended = true;
-        } else {
-          gate.enteredAt = 0;
-        }
-      } else if (gate.score <= this.exit) {
-        if (gate.exitedAt === 0) gate.exitedAt = now;
-        if (now - gate.exitedAt >= EXTENSION_CONFIG.debounceMs) gate.extended = false;
-      } else {
-        gate.exitedAt = 0;
-      }
-
-      extended[finger] = gate.extended;
+      extended[finger] = readings[finger]?.active === true && readings[finger]?.state === "OPEN";
     }
 
     const indexBase = pointAt(hand.landmarks, 5);
@@ -133,7 +72,7 @@ export class GestureHandTracker {
 
 /**
  * Left hand → scale degree I..VII.
- * 1–4 extended fingers, all five for V, index+pinky for VI,
+ * 1–4 open fingers, all five for V, index+pinky for VI,
  * index+pinky+thumb for VII. A fist returns null, which mutes the chord.
  */
 export function degreeFromPose(pose: HandPose): number | null {
@@ -152,7 +91,7 @@ export function degreeFromPose(pose: HandPose): number | null {
   return null;
 }
 
-/** Right hand → chord voicing from the number of extended non-thumb fingers. */
+/** Right hand → chord voicing from the number of OPEN non-thumb fingers. */
 export function voicingFromPose(pose: HandPose): ChordVoicing | null {
   if (!pose.present) return null;
   switch (pose.nonThumbCount) {
@@ -177,7 +116,7 @@ export function modeFromPose(pose: HandPose): ChordMode {
   return "diatonic";
 }
 
-/** Right thumb out lowers the octave, thumb tucked in raises it. */
+/** Right thumb OPEN lowers the octave, thumb closed raises it. */
 export function octaveShiftFromPose(pose: HandPose): number {
   if (!pose.present) return 0;
   return pose.extended.thumb ? -1 : 1;

@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 import type { AudioEngine } from "../lib/audio-engine";
 import { FingerClassifier } from "../lib/finger-classifier";
 import type { FingerState } from "../lib/finger-classifier";
+import { consumeRecalibrationRequest, publishFingerDebug } from "../lib/finger-debug";
 import { projectPoint, projectionFor } from "../lib/hand-geometry";
 import type { RenderFingertip } from "../lib/hand-renderer";
 import { HandVisionRenderer } from "../lib/hand-renderer";
@@ -23,11 +24,13 @@ const PULSE_MS = 420;
 
 /** States worth drawing, mapped onto the three marker tones. */
 const MARKER_TONE: Partial<Record<FingerState, "detected" | "unstable">> = {
-  extended: "detected",
-  partially_extended: "detected",
-  unstable: "unstable",
-  occluded: "unstable",
+  OPEN: "detected",
+  PARTIALLY_OPEN: "detected",
+  UNSTABLE: "unstable",
+  OCCLUDED: "unstable",
 };
+
+const DEBUG_INTERVAL_MS = 90;
 
 export interface UsePitchSynthParams {
   canvasRef: RefObject<HTMLCanvasElement | null>;
@@ -72,8 +75,8 @@ export function usePitchSynth({
 
   const leftClassifierRef = useRef<FingerClassifier | null>(null);
   const rightClassifierRef = useRef<FingerClassifier | null>(null);
-  if (!leftClassifierRef.current) leftClassifierRef.current = new FingerClassifier();
-  if (!rightClassifierRef.current) rightClassifierRef.current = new FingerClassifier();
+  if (!leftClassifierRef.current) leftClassifierRef.current = new FingerClassifier("left");
+  if (!rightClassifierRef.current) rightClassifierRef.current = new FingerClassifier("right");
 
   const movementRef = useRef<MovementAnalyzer | null>(null);
   if (!movementRef.current) movementRef.current = new MovementAnalyzer();
@@ -97,6 +100,7 @@ export function usePitchSynth({
     let raf = 0;
     let last = performance.now();
     let lastPublish = 0;
+    let lastDebug = 0;
 
     const releaseAll = () => {
       for (const key of states.keys()) audioRef.current?.pitchOff(key);
@@ -143,8 +147,33 @@ export function usePitchSynth({
       const rightHand = handOf(hands, "right");
       leftClassifier.configure(feel.sensitivity, feel.smoothing);
       rightClassifier.configure(feel.sensitivity, feel.smoothing);
+      if (consumeRecalibrationRequest()) {
+        leftClassifier.recalibrate();
+        rightClassifier.recalibrate();
+      }
       const leftReadings = leftClassifier.update(leftHand, aspect, now);
       const rightReadings = rightClassifier.update(rightHand, aspect, now);
+
+      if (import.meta.env.DEV && now - lastDebug >= DEBUG_INTERVAL_MS) {
+        lastDebug = now;
+        publishFingerDebug(
+          [
+            {
+              hand: "left",
+              present: leftHand !== null,
+              profileSamples: leftClassifier.profileSamples,
+              readings: FINGER_NAMES.map((finger) => leftReadings[finger]),
+            },
+            {
+              hand: "right",
+              present: rightHand !== null,
+              profileSamples: rightClassifier.profileSamples,
+              readings: FINGER_NAMES.map((finger) => rightReadings[finger]),
+            },
+          ],
+          now,
+        );
+      }
 
       const seen = new Set<FingerKey>();
       const moves = new Map<FingerKey, MoveSample>();
@@ -237,7 +266,7 @@ export function usePitchSynth({
             finger,
             hand,
             phase: state.phase,
-            state: "active",
+            state: "OPEN",
             movement: move?.direction ?? "stationary",
             movementSpeed: move?.speed ?? 0,
             midi: state.midi,
@@ -272,3 +301,4 @@ export function usePitchSynth({
 
   return { snapshot };
 }
+

@@ -15,9 +15,12 @@ import {
   octaveShiftFromPose,
   voicingFromPose,
 } from "../lib/gesture-poses";
+import { FingerClassifier } from "../lib/finger-classifier";
+import { consumeRecalibrationRequest, publishFingerDebug } from "../lib/finger-debug";
 import { fingertipsOf, pointAt, projectPoint, projectionFor } from "../lib/hand-geometry";
 import { HandVisionRenderer } from "../lib/hand-renderer";
 import type { RenderFingertip } from "../lib/hand-renderer";
+import { FINGER_NAMES } from "../types/hand";
 import type { HandFrame, HandSample } from "../types/hand";
 import type { PianoNote } from "../types/piano";
 
@@ -66,6 +69,7 @@ const CHORD_SETTLE_MS = 120;
 const MUTE_GRACE_MS = 190;
 const PULSE_MS = 700;
 const MIN_HAND_CONFIDENCE = 0.35;
+const DEBUG_INTERVAL_MS = 90;
 
 function handOf(hands: HandSample[], side: "left" | "right"): HandSample | null {
   const match = hands.find((hand) => hand.handedness === side);
@@ -98,6 +102,11 @@ export function useGestureSynth({
   if (!leftTrackerRef.current) leftTrackerRef.current = new GestureHandTracker();
   if (!rightTrackerRef.current) rightTrackerRef.current = new GestureHandTracker();
 
+  const leftClassifierRef = useRef<FingerClassifier | null>(null);
+  const rightClassifierRef = useRef<FingerClassifier | null>(null);
+  if (!leftClassifierRef.current) leftClassifierRef.current = new FingerClassifier("left");
+  if (!rightClassifierRef.current) rightClassifierRef.current = new FingerClassifier("right");
+
   const rendererRef = useRef<HandVisionRenderer | null>(null);
   if (!rendererRef.current) rendererRef.current = new HandVisionRenderer();
 
@@ -114,10 +123,14 @@ export function useGestureSynth({
     const leftTracker = leftTrackerRef.current;
     const rightTracker = rightTrackerRef.current;
     const renderer = rendererRef.current;
+    const leftClassifier = leftClassifierRef.current;
+    const rightClassifier = rightClassifierRef.current;
     if (!canvas || !leftTracker || !rightTracker || !renderer) return;
+    if (!leftClassifier || !rightClassifier) return;
 
     let raf = 0;
     let last = performance.now();
+    let lastDebug = 0;
     let active: { id: string; name: string; notes: PianoNote[] } | null = null;
     let pending: { chord: Chord; since: number; velocity: number } | null = null;
     let lastVoicing: ChordVoicing = "root";
@@ -176,10 +189,37 @@ export function useGestureSynth({
       const leftHand = handOf(hands, "left");
       const rightHand = handOf(hands, "right");
       const feel = feelRef.current;
-      leftTracker.configure(feel.sensitivity, feel.smoothing);
-      rightTracker.configure(feel.sensitivity, feel.smoothing);
-      const leftPose = leftTracker.update(leftHand, aspect, now);
-      const rightPose = rightTracker.update(rightHand, aspect, now);
+      leftClassifier.configure(feel.sensitivity, feel.smoothing);
+      rightClassifier.configure(feel.sensitivity, feel.smoothing);
+      if (consumeRecalibrationRequest()) {
+        leftClassifier.recalibrate();
+        rightClassifier.recalibrate();
+      }
+      const leftReadings = leftClassifier.update(leftHand, aspect, now);
+      const rightReadings = rightClassifier.update(rightHand, aspect, now);
+      const leftPose = leftTracker.update(leftHand, leftReadings, aspect);
+      const rightPose = rightTracker.update(rightHand, rightReadings, aspect);
+
+      if (import.meta.env.DEV && now - lastDebug >= DEBUG_INTERVAL_MS) {
+        lastDebug = now;
+        publishFingerDebug(
+          [
+            {
+              hand: "left",
+              present: leftHand !== null,
+              profileSamples: leftClassifier.profileSamples,
+              readings: FINGER_NAMES.map((finger) => leftReadings[finger]),
+            },
+            {
+              hand: "right",
+              present: rightHand !== null,
+              profileSamples: rightClassifier.profileSamples,
+              readings: FINGER_NAMES.map((finger) => rightReadings[finger]),
+            },
+          ],
+          now,
+        );
+      }
 
       const degree = degreeFromPose(leftPose);
       const mode = modeFromPose(leftPose);

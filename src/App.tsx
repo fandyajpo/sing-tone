@@ -3,6 +3,7 @@ import { AudioControls } from "./components/AudioControls/AudioControls";
 import { SettingsSheet } from "./components/BottomSheet/SettingsSheet";
 import { CameraSelector } from "./components/CameraSelector/CameraSelector";
 import { CameraView } from "./components/CameraView/CameraView";
+import { FingerDebugOverlay } from "./components/FingerDebug/FingerDebugOverlay";
 import { GestureHud } from "./components/GestureHud/GestureHud";
 import { GuidePanel } from "./components/GuidePanel/GuidePanel";
 import type { PerformanceSettings } from "./components/GuidePanel/GuidePanel";
@@ -637,6 +638,8 @@ export default function App() {
           onRetry={retryInitialization}
         />
       )}
+
+      {import.meta.env.DEV && <FingerDebugOverlay />}
 
       {!started && (
         <StartGate
