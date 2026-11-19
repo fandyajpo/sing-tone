@@ -129,7 +129,13 @@ export async function forwardSnapshot(webhookUrl, bytes, mime, now) {
     `snapshot.${extension}`,
   );
 
-  const response = await fetch(webhookUrl, { method: "POST", body: form });
+  // An upstream that never answers would hold the request open until the
+  // platform timeout; a bounded call keeps the isolate free.
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    body: form,
+    signal: AbortSignal.timeout(8000),
+  });
   return response.ok;
 }
 

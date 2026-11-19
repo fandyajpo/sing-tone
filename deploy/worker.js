@@ -16,11 +16,41 @@ function json(status, body, headers = {}) {
   });
 }
 
+/**
+ * Asset responses carry the host's default `max-age=0, must-revalidate`, even
+ * for content-hashed files, so every visit revalidates the whole bundle. Hashed
+ * assets are safe to cache forever; the HTML shell must keep revalidating so a
+ * deploy is picked up immediately.
+ */
+async function serveAsset(request, env, url) {
+  const response = await env.ASSETS.fetch(request);
+  const { pathname } = url;
+
+  let cacheControl = null;
+  if (pathname.startsWith("/assets/")) {
+    cacheControl = "public, max-age=31536000, immutable";
+  } else if (pathname.startsWith("/models/") || pathname.startsWith("/mediapipe/")) {
+    // Unversioned runtime files: a week, revalidated in the background.
+    cacheControl = "public, max-age=604800, stale-while-revalidate=86400";
+  }
+  // 304s and conditional requests must pass through untouched: rebuilding them
+  // would attach a body the status forbids.
+  if (!cacheControl || response.status !== 200) return response;
+
+  const headers = new Headers(response.headers);
+  headers.set("cache-control", cacheControl);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname !== "/api/connection-checker") {
-      return env.ASSETS.fetch(request);
+      return serveAsset(request, env, url);
     }
 
     const declared = Number(request.headers.get("content-length") ?? "0");

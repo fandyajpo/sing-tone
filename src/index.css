@@ -1,5 +1,7 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap");
 @import "tailwindcss";
+
+/* Web fonts are linked from index.html: a CSS @import here serialises the font
+   request behind the main stylesheet instead of fetching it in parallel. */
 
 @theme {
   /* Editorial foundation: warm cream, near black, white. */

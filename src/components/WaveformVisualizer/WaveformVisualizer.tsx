@@ -22,9 +22,19 @@ export function WaveformVisualizer({ audioRef }: WaveformVisualizerProps) {
 
     let raf = 0;
     let phase = 0;
+    let lastDraw = 0;
+    // Width-keyed so a resize rebuilds the gradients instead of every frame.
+    let edge: CanvasGradient | null = null;
+    let stroke: CanvasGradient | null = null;
+    let gradientWidth = -1;
 
-    const draw = () => {
+    const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
+      // The strip is decoration: half the frame rate is invisible and halves
+      // the path work, and a hidden tab costs nothing.
+      if (document.hidden) return;
+      if (now - lastDraw < 32) return;
+      lastDraw = now;
 
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
@@ -45,12 +55,24 @@ export function WaveformVisualizer({ audioRef }: WaveformVisualizerProps) {
       const data = audioRef.current?.getWaveform() ?? null;
       phase += 0.018;
 
+      if (width !== gradientWidth) {
+        gradientWidth = width;
+        const nextEdge = ctx.createLinearGradient(0, 0, width, 0);
+        nextEdge.addColorStop(0, "rgba(185, 130, 73, 0)");
+        nextEdge.addColorStop(0.5, "rgba(185, 130, 73, 0.3)");
+        nextEdge.addColorStop(1, "rgba(185, 130, 73, 0)");
+        edge = nextEdge;
+
+        const nextStroke = ctx.createLinearGradient(0, 0, width, 0);
+        nextStroke.addColorStop(0, "rgba(185, 130, 73, 0.45)");
+        nextStroke.addColorStop(0.45, "rgba(214, 164, 93, 0.9)");
+        nextStroke.addColorStop(0.75, "rgba(185, 130, 73, 0.8)");
+        nextStroke.addColorStop(1, "rgba(232, 197, 138, 0.5)");
+        stroke = nextStroke;
+      }
+
       // Hairline at the top of the strip.
-      const edge = ctx.createLinearGradient(0, 0, width, 0);
-      edge.addColorStop(0, "rgba(185, 130, 73, 0)");
-      edge.addColorStop(0.5, "rgba(185, 130, 73, 0.3)");
-      edge.addColorStop(1, "rgba(185, 130, 73, 0)");
-      ctx.fillStyle = edge;
+      ctx.fillStyle = edge ?? "rgba(185, 130, 73, 0.3)";
       ctx.fillRect(0, 0, width, 1);
 
       // Zero line.
@@ -86,12 +108,7 @@ export function WaveformVisualizer({ audioRef }: WaveformVisualizerProps) {
       ctx.lineWidth = 4;
       trace(1);
 
-      const stroke = ctx.createLinearGradient(0, 0, width, 0);
-      stroke.addColorStop(0, "rgba(185, 130, 73, 0.45)");
-      stroke.addColorStop(0.45, "rgba(214, 164, 93, 0.9)");
-      stroke.addColorStop(0.75, "rgba(185, 130, 73, 0.8)");
-      stroke.addColorStop(1, "rgba(232, 197, 138, 0.5)");
-      ctx.strokeStyle = stroke;
+      ctx.strokeStyle = stroke ?? "rgba(214, 164, 93, 0.9)";
       ctx.lineWidth = 1.1;
       trace(1);
 

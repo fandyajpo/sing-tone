@@ -47,6 +47,19 @@ function describeError(error: unknown): { status: CameraStatus; message: string 
   return { status: "error", message: "The camera could not be started." };
 }
 
+/**
+ * Phone-class devices pay for every pixel twice: once in the decoder and once
+ * per inference. They get a smaller capture and a lower frame rate, which the
+ * recognizer handles identically because it measures in palm-relative units.
+ */
+function isLowPowerDevice(): boolean {
+  const cores = navigator.hardwareConcurrency ?? 8;
+  const memory =
+    (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+  return cores <= 4 || memory <= 4 || (coarsePointer && cores <= 6);
+}
+
 function isSupported(): boolean {
   return (
     typeof navigator !== "undefined" &&
@@ -108,19 +121,14 @@ export function useCamera(videoRef: RefObject<HTMLVideoElement | null>): UseCame
       setError(null);
       stopStream();
 
+      const lowPower = isLowPowerDevice();
+      const size = lowPower
+        ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24, max: 24 } }
+        : { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } };
+
       const videoConstraints: MediaTrackConstraints = requestedDeviceId
-        ? {
-            deviceId: { exact: requestedDeviceId },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 30, max: 30 },
-          }
-        : {
-            facingMode: "user",
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 30, max: 30 },
-          };
+        ? { deviceId: { exact: requestedDeviceId }, ...size }
+        : { facingMode: "user", ...size };
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({

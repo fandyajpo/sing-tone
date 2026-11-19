@@ -10,6 +10,9 @@ interface LiveVoice {
   timer: number | null;
 }
 
+/** Ten fingers is the physical maximum; anything more is a leaked voice. */
+const MAX_VOICES = 10;
+
 /**
  * Continuous voices, one per fingertip. Unlike the chord engine these never
  * retrigger: a voice is attacked once, then its frequency is ramped, which is
@@ -39,6 +42,7 @@ export class PitchVoicePool {
       this.setMidi(key, midi, 0.02);
       return;
     }
+    if (this.voices.size >= MAX_VOICES) return;
     const voice = this.createVoice();
     this.voices.set(key, voice);
     voice.node.triggerAttack(frequencyFor(midi), Tone.now(), clamp01(velocity));

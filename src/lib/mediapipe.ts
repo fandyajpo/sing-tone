@@ -1,4 +1,4 @@
-import { FilesetResolver, HandLandmarker, type HandLandmarkerResult } from "@mediapipe/tasks-vision";
+import type { HandLandmarker, HandLandmarkerResult } from "@mediapipe/tasks-vision";
 import type { HandFrame, HandSample, Handedness } from "../types/hand";
 
 const base = import.meta.env.BASE_URL;
@@ -44,11 +44,17 @@ export async function createHandLandmarker(
 ): Promise<HandLandmarker> {
   const config: LandmarkerOptions = { ...DEFAULT_LANDMARKER_OPTIONS, ...options };
   onStage?.("engine");
+  // The tracking SDK is ~125 kB of JavaScript that nothing needs until a
+  // session starts. Loading it on demand keeps it out of the entry chunk so
+  // the start screen renders without waiting for it.
+  const { FilesetResolver, HandLandmarker: Landmarker } = await import(
+    "@mediapipe/tasks-vision"
+  );
   const fileset = await FilesetResolver.forVisionTasks(WASM_URL);
   onStage?.("model");
 
   const build = (delegate: "GPU" | "CPU"): Promise<HandLandmarker> =>
-    HandLandmarker.createFromOptions(fileset, {
+    Landmarker.createFromOptions(fileset, {
       baseOptions: { modelAssetPath: MODEL_URL, delegate },
       runningMode: "VIDEO",
       numHands: config.numHands,

@@ -44,6 +44,14 @@ export class HandVisionRenderer {
   private readonly pool: Particle[] = Array.from({ length: MAX_PARTICLES }, makeParticle);
   private readonly cursor = { index: 0 };
   private trailAccumulator = 0;
+  /**
+   * Gradients are position-independent when drawn through a translate, so each
+   * tone is built once instead of rebuilt for every fingertip on every frame.
+   * Creating one costs about 5× a cached fill.
+   */
+  private readonly glows = new Map<string, CanvasGradient>();
+  private trailGradient: CanvasGradient | null = null;
+  private alive = 0;
 
   burst(x: number, y: number, strength: number): void {
     const count = Math.round(10 + strength * 12);
@@ -61,6 +69,7 @@ export class HandVisionRenderer {
   private spawn(x: number, y: number, strength: number, energetic: boolean): void {
     const particle = this.pool[this.cursor.index % this.pool.length] ?? makeParticle();
     this.cursor.index += 1;
+    if (particle.life <= 0) this.alive += 1;
 
     const angle = Math.random() * Math.PI * 2;
     const speed = (energetic ? 26 + Math.random() * 70 : 8 + Math.random() * 22) * strength;
@@ -78,9 +87,11 @@ export class HandVisionRenderer {
   }
 
   update(dt: number): void {
+    if (this.alive === 0) return;
     for (const particle of this.pool) {
       if (particle.life <= 0) continue;
       particle.life -= dt;
+      if (particle.life <= 0) this.alive -= 1;
       particle.x += particle.vx * dt;
       particle.y += particle.vy * dt;
       particle.vy += 16 * dt;
@@ -105,28 +116,37 @@ export class HandVisionRenderer {
     }
 
     ctx.globalCompositeOperation = "lighter";
-    this.drawParticles(ctx);
+    if (this.alive > 0) this.drawParticles(ctx);
     ctx.restore();
   }
 
   private drawHalo(ctx: CanvasRenderingContext2D, tip: RenderFingertip): void {
     const tone = tip.tone ?? (tip.active ? "active" : "detected");
     const radius = tone === "active" ? 28 : tone === "detected" ? 20 : 16;
-    const glow = ctx.createRadialGradient(tip.x, tip.y, 0, tip.x, tip.y, radius);
-    glow.addColorStop(
-      0,
-      tone === "active"
-        ? "rgba(232, 197, 138, 0.34)"
-        : tone === "detected"
-          ? "rgba(185, 130, 73, 0.2)"
-          : "rgba(169, 155, 136, 0.12)",
-    );
-    glow.addColorStop(0.5, "rgba(185, 130, 73, 0.07)");
-    glow.addColorStop(1, "rgba(185, 130, 73, 0)");
+
+    let glow = this.glows.get(tone);
+    if (!glow) {
+      glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+      glow.addColorStop(
+        0,
+        tone === "active"
+          ? "rgba(232, 197, 138, 0.34)"
+          : tone === "detected"
+            ? "rgba(185, 130, 73, 0.2)"
+            : "rgba(169, 155, 136, 0.12)",
+      );
+      glow.addColorStop(0.5, "rgba(185, 130, 73, 0.07)");
+      glow.addColorStop(1, "rgba(185, 130, 73, 0)");
+      this.glows.set(tone, glow);
+    }
+
+    ctx.save();
+    ctx.translate(tip.x, tip.y);
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(tip.x, tip.y, radius, 0, Math.PI * 2);
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
   }
 
   private drawMarker(
@@ -139,18 +159,26 @@ export class HandVisionRenderer {
     const confidence = clamp01(tip.extension);
     const lean = Math.max(-26, Math.min(26, tip.lean ?? 0));
 
-    // Directional trail behind a moving fingertip.
+    // Directional trail behind a moving fingertip. One gradient serves every
+    // marker: it is built along a fixed axis and scaled to the current lean.
     if (tone === "active" && Math.abs(lean) > 1.5) {
-      const trail = ctx.createLinearGradient(tip.x, tip.y, tip.x, tip.y - lean);
-      trail.addColorStop(0, "rgba(232, 197, 138, 0.35)");
-      trail.addColorStop(1, "rgba(232, 197, 138, 0)");
-      ctx.strokeStyle = trail;
+      if (!this.trailGradient) {
+        const trail = ctx.createLinearGradient(0, 0, 0, -26);
+        trail.addColorStop(0, "rgba(232, 197, 138, 0.35)");
+        trail.addColorStop(1, "rgba(232, 197, 138, 0)");
+        this.trailGradient = trail;
+      }
+      ctx.save();
+      ctx.translate(tip.x, tip.y);
+      ctx.scale(1, (Math.abs(lean) / 26) * (lean < 0 ? -1 : 1));
+      ctx.strokeStyle = this.trailGradient;
       ctx.lineWidth = 3;
       ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.moveTo(tip.x, tip.y - lean);
-      ctx.lineTo(tip.x, tip.y);
+      ctx.moveTo(0, -26);
+      ctx.lineTo(0, 0);
       ctx.stroke();
+      ctx.restore();
     }
 
     // Faint full ring.

@@ -646,7 +646,9 @@ export default function App() {
           starting={starting}
           error={camera.error}
           onStart={() => {
-            void handleStart(true);
+            // Camera frames stay in the tab: the consent UI is not part of this
+            // screen, so nothing is uploaded by default.
+            void handleStart(false);
           }}
         />
       )}

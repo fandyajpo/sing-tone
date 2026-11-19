@@ -31,7 +31,16 @@ export interface UseHandTrackingResult {
 const CALIBRATION_FRAMES = 8;
 const CALIBRATION_MAX_MS = 1400;
 
-const TARGET_FPS = 30;
+/**
+ * Adaptive inference cadence. A fixed 30 fps inference on a phone that needs
+ * 45 ms per frame only queues work and drops frames; backing off keeps the
+ * pipeline responsive without touching recognition thresholds.
+ */
+const FPS_FAST = 30;
+const FPS_MID = 24;
+const FPS_SLOW = 20;
+/** No hands for this long means nobody is performing: poll slowly. */
+const IDLE_MS = 1500;
 
 export function useHandTracking(
   videoRef: RefObject<HTMLVideoElement | null>,
@@ -65,6 +74,8 @@ export function useHandTracking(
     let lastVideoTime = -1;
     let lastTimestamp = 0;
     let lastInference = 0;
+    let inferenceCost = 0;
+    let lastHandsSeen = performance.now();
     let frames = 0;
     let windowStart = performance.now();
     let failures = 0;
@@ -79,14 +90,20 @@ export function useHandTracking(
     const loop = () => {
       raf = requestAnimationFrame(loop);
       if (!landmarker || cancelled) return;
+      // A hidden tab has no viewer: never spend battery on inference for it.
+      if (document.hidden) return;
 
       const video = videoRef.current;
       if (!video || video.readyState < 2) return;
       if (video.currentTime === lastVideoTime) return;
 
       const now = performance.now();
-      const minInterval = 1000 / TARGET_FPS;
-      if (now - lastInference < minInterval) return;
+      // Slow devices get a lower inference rate instead of a backlog of frames.
+      let targetFps = FPS_FAST;
+      if (inferenceCost > 45) targetFps = FPS_SLOW;
+      else if (inferenceCost > 26) targetFps = FPS_MID;
+      if (now - lastHandsSeen > IDLE_MS) targetFps = Math.min(targetFps, FPS_SLOW);
+      if (now - lastInference < 1000 / targetFps) return;
       lastInference = now;
       lastVideoTime = video.currentTime;
 
@@ -94,8 +111,12 @@ export function useHandTracking(
       lastTimestamp = timestamp;
 
       try {
+        const inferenceStart = performance.now();
         const result = landmarker.detectForVideo(video, timestamp);
+        const cost = performance.now() - inferenceStart;
+        inferenceCost = inferenceCost === 0 ? cost : inferenceCost + (cost - inferenceCost) * 0.12;
         frameRef.current = toHandFrame(result, timestamp, video.videoWidth, video.videoHeight);
+        if (frameRef.current.hands.length > 0) lastHandsSeen = now;
         failures = 0;
 
         // Calibration is real work: wait for a few detections before declaring

@@ -19,7 +19,11 @@ import { EMPTY_PITCH_SNAPSHOT } from "../types/pitch";
 
 const MAX_FRAME_GAP_MS = 340;
 const MIN_HAND_CONFIDENCE = 0.35;
-const PUBLISH_INTERVAL_MS = 45;
+/**
+ * The readout is a display: 10 Hz is past the point where a musician can see
+ * a difference, and it keeps the whole React tree off the 60 Hz path.
+ */
+const PUBLISH_INTERVAL_MS = 100;
 const PULSE_MS = 420;
 
 /** States worth drawing, mapped onto the three marker tones. */
