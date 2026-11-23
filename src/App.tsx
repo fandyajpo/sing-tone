@@ -7,6 +7,7 @@ import { FingerDebugOverlay } from "./components/FingerDebug/FingerDebugOverlay"
 import { GestureHud } from "./components/GestureHud/GestureHud";
 import { GuidePanel } from "./components/GuidePanel/GuidePanel";
 import type { PerformanceSettings } from "./components/GuidePanel/GuidePanel";
+import { HandLegend } from "./components/HandOverlay/HandLegend";
 import { HandOverlay } from "./components/HandOverlay/HandOverlay";
 import { InitializationScreen } from "./components/InitializationScreen/InitializationScreen";
 import type { InitStageKey } from "./components/InitializationScreen/InitializationScreen";
@@ -442,6 +443,7 @@ export default function App() {
           />
 
           <HandOverlay canvasRef={canvasRef} />
+          <HandLegend />
           <WaveformVisualizer audioRef={audio.engineRef} />
 
           <div className="pointer-events-none absolute left-3 top-3 z-20 hidden items-center gap-2 rounded-[3px] border-2 border-edge bg-paper/85 px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.24em] text-ink-soft shadow-[2px_2px_0_var(--color-edge)] lg:flex">

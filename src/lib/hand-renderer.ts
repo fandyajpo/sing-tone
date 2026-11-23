@@ -1,4 +1,6 @@
 import { clamp, clamp01 } from "./hand-geometry";
+import type { FingerName, Handedness } from "../types/hand";
+import { HAND_CONNECTIONS } from "../types/hand";
 
 /** One armed (visibly extended) fingertip, drawn as an interaction marker. */
 export interface RenderFingertip {
@@ -9,6 +11,8 @@ export interface RenderFingertip {
   /** Extension confidence 0..1, drawn as a partial ring. */
   extension: number;
   label: string | null;
+  /** Which finger this is; drawn as a T/I/M/R/P tag under the marker. */
+  finger?: FingerName;
   /** 1 immediately after a strike, decaying to 0. */
   pulse: number;
   /** active = sounding, detected = confident but not armed, unstable = low trust. */
@@ -16,6 +20,35 @@ export interface RenderFingertip {
   /** Vertical motion in canvas pixels over recent frames, drawn as a trail. */
   lean?: number;
 }
+
+/**
+ * One tracked hand. The wireframe answers the question a performer always asks
+ * first: is the tracker seeing my hand, and where does it think my fingers are?
+ */
+export interface RenderHand {
+  side: Handedness;
+  /** Chip heading, e.g. "Left hand" or "Left · degree". */
+  label: string;
+  /** Chip status, e.g. "96% · 3 of 5 held". */
+  detail: string;
+  /** The 21 MediaPipe landmarks in display space. */
+  points: ReadonlyArray<{ x: number; y: number }>;
+  /** Detection score 0..1, drawn as the chip's lock bar. */
+  confidence: number;
+}
+
+const SIDE_TONE: Record<Handedness, { rgb: string; solid: string }> = {
+  left: { rgb: "69, 99, 255", solid: "#4563ff" },
+  right: { rgb: "255, 107, 97", solid: "#ff6b61" },
+};
+
+const FINGER_GLYPH: Record<FingerName, string> = {
+  thumb: "T",
+  index: "I",
+  middle: "M",
+  ring: "R",
+  pinky: "P",
+};
 
 interface Particle {
   x: number;
@@ -36,9 +69,12 @@ function makeParticle(): Particle {
 }
 
 /**
- * Draws fingertip markers, note labels and particles. There is deliberately no
- * hand skeleton, palm glow or wrist marker: only exposed fingertips are
- * interaction points, so only those are visualised.
+ * Draws the tracked hand, fingertip markers, note labels and particles.
+ *
+ * The wireframe and its chip exist to be read, not played: they tell a
+ * performer which hand the tracker has locked, how confident it is, and which
+ * finger each marker belongs to. All interaction still happens at exposed
+ * fingertips, which carry the rings and the note names.
  */
 export class HandVisionRenderer {
   private readonly pool: Particle[] = Array.from({ length: MAX_PARTICLES }, makeParticle);
@@ -101,7 +137,19 @@ export class HandVisionRenderer {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D, tips: readonly RenderFingertip[], width: number): void {
+  draw(
+    ctx: CanvasRenderingContext2D,
+    tips: readonly RenderFingertip[],
+    width: number,
+    height: number,
+    hands: readonly RenderHand[] = [],
+  ): void {
+    if (hands.length > 0) {
+      ctx.save();
+      for (const hand of hands) this.drawSkeleton(ctx, hand);
+      ctx.restore();
+    }
+
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
@@ -117,6 +165,124 @@ export class HandVisionRenderer {
 
     ctx.globalCompositeOperation = "lighter";
     if (this.alive > 0) this.drawParticles(ctx);
+    ctx.restore();
+
+    // Chips last: they are labels and must never sit under a glow.
+    for (const hand of hands) this.drawHandChip(ctx, hand, width, height);
+  }
+
+  /**
+   * A quiet wireframe over the performer's real hand: palm body, bones, joints.
+   * It is deliberately drawn under the fingertip markers so it never competes
+   * with the notes, but it makes the detection legible frame by frame.
+   */
+  private drawSkeleton(ctx: CanvasRenderingContext2D, hand: RenderHand): void {
+    const points = hand.points;
+    if (points.length < 21) return;
+    const tone = SIDE_TONE[hand.side];
+
+    // Palm body: wrist, the four knuckles and the thumb base. These five never
+    // cross each other on a real hand, so the fill stays stable.
+    const wrist = points[0];
+    if (wrist) {
+      ctx.fillStyle = `rgba(${tone.rgb}, 0.07)`;
+      ctx.beginPath();
+      ctx.moveTo(wrist.x, wrist.y);
+      for (const index of [5, 9, 13, 17]) {
+        const point = points[index];
+        if (point) ctx.lineTo(point.x, point.y);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Bones, as one path and one stroke.
+    ctx.strokeStyle = `rgba(${tone.rgb}, 0.52)`;
+    ctx.lineWidth = 1.8;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    for (const [from, to] of HAND_CONNECTIONS) {
+      const a = points[from];
+      const b = points[to];
+      if (!a || !b) continue;
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+    }
+    ctx.stroke();
+
+    // Joints sit on a dark seat so they stay legible over skin, cloth and a
+    // bright window alike.
+    ctx.fillStyle = "rgba(13, 10, 8, 0.42)";
+    for (let i = 0; i < points.length; i += 1) {
+      const point = points[i];
+      if (!point) continue;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, i === 0 ? 5 : 3.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = tone.solid;
+    for (let i = 0; i < points.length; i += 1) {
+      const point = points[i];
+      if (!point) continue;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, i === 0 ? 3.4 : 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  /**
+   * The wrist chip: hand name, live detection quality and a lock bar. It is the
+   * one place that says "tracked" in plain words, so nobody has to infer
+   * whether the wireframe is stale.
+   */
+  private drawHandChip(
+    ctx: CanvasRenderingContext2D,
+    hand: RenderHand,
+    width: number,
+    height: number,
+  ): void {
+    const wrist = hand.points[0];
+    if (!wrist) return;
+    const tone = SIDE_TONE[hand.side];
+
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+    ctx.font = "600 10px ui-monospace, SFMono-Regular, Menlo, monospace";
+    const title = hand.label.toUpperCase();
+    const titleWidth = ctx.measureText(title).width;
+    ctx.font = "500 8px ui-monospace, SFMono-Regular, Menlo, monospace";
+    const detailWidth = ctx.measureText(hand.detail).width;
+
+    const boxWidth = Math.max(titleWidth, detailWidth) + 22;
+    const boxHeight = 34;
+    const boxX = clamp(wrist.x - boxWidth / 2, 6, Math.max(6, width - boxWidth - 6));
+    const boxY = clamp(wrist.y + 18, 6, Math.max(6, height - boxHeight - 6));
+
+    ctx.fillStyle = "rgba(13, 10, 8, 0.86)";
+    drawRoundRect(ctx, boxX, boxY, boxWidth, boxHeight, 3);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${tone.rgb}, 0.92)`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = tone.solid;
+    ctx.fillRect(boxX + 1, boxY + 4, 3, boxHeight - 8);
+
+    ctx.font = "600 10px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = "#f1e8d9";
+    ctx.fillText(title, boxX + 11, boxY + 13.5);
+
+    ctx.font = "500 8px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = "rgba(241, 232, 217, 0.7)";
+    ctx.fillText(hand.detail, boxX + 11, boxY + 24.5);
+
+    const lock = clamp01(hand.confidence);
+    const barWidth = boxWidth - 22;
+    ctx.fillStyle = "rgba(241, 232, 217, 0.16)";
+    ctx.fillRect(boxX + 11, boxY + boxHeight - 5, barWidth, 2);
+    ctx.fillStyle = tone.solid;
+    ctx.fillRect(boxX + 11, boxY + boxHeight - 5, barWidth * lock, 2);
     ctx.restore();
   }
 
@@ -247,6 +413,16 @@ export class HandVisionRenderer {
       ctx.stroke();
     }
 
+    if (tip.finger) {
+      drawFingerTag(
+        ctx,
+        tip.x,
+        tip.y + ringRadius + 10,
+        FINGER_GLYPH[tip.finger],
+        tone === "active",
+      );
+    }
+
     if (tip.label) {
       drawNoteLabel(ctx, tip.x, tip.y, tip.label, width);
     }
@@ -265,6 +441,46 @@ export class HandVisionRenderer {
       ctx.fill();
     }
   }
+}
+
+function drawFingerTag(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  glyph: string,
+  active: boolean,
+): void {
+  ctx.save();
+  ctx.globalCompositeOperation = "source-over";
+  ctx.font = "600 8px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(13, 10, 8, 0.65)";
+  ctx.fillText(glyph, x, y + 0.8);
+  ctx.fillStyle = active ? "rgba(241, 232, 217, 0.95)" : "rgba(241, 232, 217, 0.62)";
+  ctx.fillText(glyph, x, y);
+  ctx.restore();
+}
+
+function drawRoundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+): void {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
 }
 
 function drawNoteLabel(

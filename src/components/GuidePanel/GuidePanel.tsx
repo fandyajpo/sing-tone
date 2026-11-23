@@ -308,6 +308,11 @@ export function GuidePanel({
                 <li>· Hold a sign still for a moment before changing it.</li>
                 <li>· If a hand is lost, lower your detection confidence.</li>
               </ul>
+              <p className="mt-2.5 text-[10px] leading-relaxed text-ink-faint">
+                Reading the overlay: the cobalt wireframe is your left hand, coral your right. The
+                chip at each wrist shows detection confidence and how many fingers are held. Each
+                fingertip carries its finger letter (T I M R P) and, when it sounds, its note.
+              </p>
               {trackingError && <p className="mt-2 text-[10px] text-magenta">{trackingError}</p>}
             </section>
 

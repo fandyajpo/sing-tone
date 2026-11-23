@@ -17,9 +17,15 @@ import {
 } from "../lib/gesture-poses";
 import { FingerClassifier } from "../lib/finger-classifier";
 import { consumeRecalibrationRequest, publishFingerDebug } from "../lib/finger-debug";
-import { fingertipsOf, pointAt, projectPoint, projectionFor } from "../lib/hand-geometry";
+import {
+  displayLandmarks,
+  fingertipsOf,
+  pointAt,
+  projectPoint,
+  projectionFor,
+} from "../lib/hand-geometry";
 import { HandVisionRenderer } from "../lib/hand-renderer";
-import type { RenderFingertip } from "../lib/hand-renderer";
+import type { RenderFingertip, RenderHand } from "../lib/hand-renderer";
 import { FINGER_NAMES } from "../types/hand";
 import type { HandFrame, HandSample } from "../types/hand";
 import type { PianoNote } from "../types/piano";
@@ -270,12 +276,23 @@ export function useGestureSynth({
 
       const pulse = Math.max(0, 1 - (now - pulseAt) / PULSE_MS);
       const tips: RenderFingertip[] = [];
+      const renderHands: RenderHand[] = [];
 
       for (const [hand, pose] of [
         [leftHand, leftPose] as const,
         [rightHand, rightPose] as const,
       ]) {
         if (!hand || !pose.present) continue;
+        const confidence = hand.score > 0 ? Math.min(1, hand.score) : 1;
+        renderHands.push({
+          side: hand.handedness,
+          label: hand.handedness === "left" ? "Left · degree" : "Right · voicing",
+          detail: `${Math.round(confidence * 100)}% · ${pose.nonThumbCount} fingers`,
+          points: displayLandmarks(hand).map((point) =>
+            projectPoint(point.x, point.y, projection),
+          ),
+          confidence,
+        });
         for (const tip of fingertipsOf(hand)) {
           if (!pose.extended[tip.finger]) continue;
           const point = projectPoint(tip.x, tip.y, projection);
@@ -286,6 +303,7 @@ export function useGestureSynth({
             active: active !== null,
             extension: 1,
             label: null,
+            finger: tip.finger,
             pulse,
           });
         }
@@ -301,7 +319,7 @@ export function useGestureSynth({
       }
 
       renderer.update(dt);
-      renderer.draw(ctx, tips, width);
+      renderer.draw(ctx, tips, width, height, renderHands);
 
       const nextSignature = [
         active ? active.id : "",

@@ -4,8 +4,8 @@ import type { AudioEngine } from "../lib/audio-engine";
 import { FingerClassifier } from "../lib/finger-classifier";
 import type { FingerState } from "../lib/finger-classifier";
 import { consumeRecalibrationRequest, publishFingerDebug } from "../lib/finger-debug";
-import { projectPoint, projectionFor } from "../lib/hand-geometry";
-import type { RenderFingertip } from "../lib/hand-renderer";
+import { displayLandmarks, projectPoint, projectionFor } from "../lib/hand-geometry";
+import type { RenderFingertip, RenderHand } from "../lib/hand-renderer";
 import { HandVisionRenderer } from "../lib/hand-renderer";
 import { MovementAnalyzer } from "../lib/movement-analyzer";
 import type { MoveSample } from "../lib/movement-analyzer";
@@ -182,12 +182,30 @@ export function usePitchSynth({
       const seen = new Set<FingerKey>();
       const moves = new Map<FingerKey, MoveSample>();
       const tips: RenderFingertip[] = [];
+      const renderHands: RenderHand[] = [];
 
       for (const [hand, readings] of [
         [leftHand, leftReadings] as const,
         [rightHand, rightReadings] as const,
       ]) {
         if (!hand) continue;
+
+        // The wireframe and chip below describe what the tracker currently
+        // sees, so a slow lock or a fading detection is visible, not guessed.
+        let held = 0;
+        for (const finger of FINGER_NAMES) {
+          if (readings[finger]?.active === true) held += 1;
+        }
+        const confidence = hand.score > 0 ? Math.min(1, hand.score) : 1;
+        renderHands.push({
+          side: hand.handedness,
+          label: hand.handedness === "left" ? "Left hand" : "Right hand",
+          detail: `${Math.round(confidence * 100)}% · ${held} of 5 held`,
+          points: displayLandmarks(hand).map((point) =>
+            projectPoint(point.x, point.y, projection),
+          ),
+          confidence,
+        });
 
         for (const finger of FINGER_NAMES) {
           const reading = readings[finger];
@@ -208,6 +226,7 @@ export function usePitchSynth({
                 active: false,
                 extension: reading.extension,
                 label: null,
+                finger,
                 pulse: 0,
                 tone,
               });
@@ -239,6 +258,7 @@ export function usePitchSynth({
             active: true,
             extension: reading.extension,
             label: pitch.note,
+            finger,
             pulse: Math.max(0, 1 - (now - state.noteChangedAt) / PULSE_MS),
             tone: "active",
             lean,
@@ -254,7 +274,7 @@ export function usePitchSynth({
       }
 
       renderer.update(dt);
-      renderer.draw(ctx, tips, width);
+      renderer.draw(ctx, tips, width, height, renderHands);
 
       if (now - lastPublish >= PUBLISH_INTERVAL_MS) {
         lastPublish = now;
